@@ -166,6 +166,24 @@ This project is for educational and research purposes.
 - **EfficientNet**: Google Research architecture
 - **CAS_ISIC**: Inspiration from the CAS-ISIC project
 
+## 📦 Publishing to GitHub
+
+This repository is ready to be pushed to GitHub:
+
+1. **Create a new private repository** on GitHub: https://github.com/new
+   - Name: `skin-disease-ai` (or any name you prefer)
+   - Privacy: **Private**
+   - Don't add README, .gitignore, or license (already included)
+
+2. **Push your code**:
+```bash
+git remote add origin https://github.com/YOUR-USERNAME/skin-disease-ai.git
+git branch -M main
+git push -u origin main
+```
+
+3. **Note**: Datasets are not included in the repository (too large). Users must download them separately and place in `dataset/` folder.
+
 ## 📞 Support
 
 For questions or issues, please open an issue on GitHub.
