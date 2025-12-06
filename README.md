@@ -77,28 +77,42 @@ The training uses a two-stage approach:
 
 ### 4. Test the Model
 
-Launch the GUI testing interface:
+#### Option A: Simple Single-Image GUI (Recommended for Quick Testing)
+
+```bash
+test_single.bat
+```
+
+This launches a beautiful GUI where you can:
+- 📂 Load any skin lesion image
+- 🎯 See the main diagnosis with confidence percentage
+- 🔴/🟢 View malignancy status (benign vs malignant)
+- 📊 View TOP-3 predictions with probability bars
+
+#### Option B: Universal Model Testing
 
 ```bash
 test.bat
 ```
 
-Load any skin lesion image and get instant predictions with confidence scores!
+For testing the universal model with 20 disease classes.
 
 ## 🏗️ Project Structure
 
 ```
 ├── install.bat              # Setup environment
 ├── train.bat                # Train the model
-├── test.bat                 # Test with GUI
+├── test.bat                 # Test universal model (20 classes)
+├── test_single.bat          # Test single image GUI (6 classes)
 ├── train_universal_model.py # Training script
-├── predict_universal.py     # GUI prediction interface
+├── predict_universal.py     # Universal model GUI
+├── predict_single_image.py  # Single image GUI (simple & beautiful)
 ├── setup_pytorch_environment.py  # Dependency installer
 ├── requirements.txt         # Python dependencies
 ├── dataset/                 # Place your datasets here
 ├── models/                  # Trained models saved here
 ├── results/                 # Training results and plots
-└── TEST_IMAGES/             # Sample test images
+└── TEST_IMAGES/             # Sample test images (30 examples)
 ```
 
 ## 🧠 Model Architecture
