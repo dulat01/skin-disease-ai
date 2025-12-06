@@ -27,8 +27,13 @@ wheels/
 # PyTorch
 *.pth
 *.pt
-models/
 checkpoints/
+
+# Models folder - but keep specific files
+models/*
+!models/final_model_CAS.pth
+!models/class_mapping_ru.json
+!models/.gitkeep
 
 # Data
 dataset/
