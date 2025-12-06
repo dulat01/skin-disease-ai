@@ -42,7 +42,14 @@ The model can classify the following skin conditions:
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/dulat01/skin-disease-ai.git
+cd skin-disease-ai
+```
+
+### 2. Installation
 
 Run the installation script to set up the environment:
 
@@ -55,27 +62,14 @@ This will:
 - Install PyTorch with CPU support
 - Install all required dependencies
 
-### 2. Prepare Datasets
+**Note**: The repository already includes:
+- ✅ Trained model (`models/final_model_CAS.pth` - 39.6 MB)
+- ✅ Class mappings (`models/class_mapping_ru.json`)
+- ✅ 30 test images in `TEST_IMAGES/` folder
 
-Download the following datasets and place them in the `dataset/` folder:
+You can start testing immediately after installation!
 
-- **DermaMNIST**: `dermamnist_224.npz` (from MedMNIST)
-- **PAD-UFES-20**: Extract to `dataset/PAD_UFES_20/`
-- **HAM10000**: Extract images and metadata to `dataset/HAM10000/`
-
-### 3. Train the Model
-
-Run the training script (2-5 hours depending on your hardware):
-
-```bash
-train.bat
-```
-
-The training uses a two-stage approach:
-- **Stage 1** (10 epochs): Train only the classification head with frozen base
-- **Stage 2** (20 epochs): Fine-tune all layers with lower learning rate
-
-### 4. Test the Model
+### 3. Test the Model (No Training Needed!)
 
 #### Option A: Simple Single-Image GUI (Recommended for Quick Testing)
 
@@ -96,6 +90,32 @@ test.bat
 ```
 
 For testing the universal model with 20 disease classes.
+
+---
+
+## 🎓 Training Your Own Model (Optional)
+
+If you want to retrain the model from scratch:
+
+### 1. Prepare Datasets
+
+Download the following datasets and place them in the `dataset/` folder:
+
+- **DermaMNIST**: `dermamnist_224.npz` (from MedMNIST)
+- **PAD-UFES-20**: Extract to `dataset/PAD_UFES_20/`
+- **HAM10000**: Extract images and metadata to `dataset/HAM10000/`
+
+### 2. Train the Model
+
+Run the training script (2-5 hours depending on your hardware):
+
+```bash
+train.bat
+```
+
+The training uses a two-stage approach:
+- **Stage 1** (10 epochs): Train only the classification head with frozen base
+- **Stage 2** (20 epochs): Fine-tune all layers with lower learning rate
 
 ## 🏗️ Project Structure
 
