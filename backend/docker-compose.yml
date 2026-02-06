@@ -1,0 +1,261 @@
+services:
+  # =============================================================================
+  # DATABASES
+  # =============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: skin-disease-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_MULTIPLE_DATABASES: auth_db,prediction_db,admin_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # REDIS (Cache & Celery Broker)
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: skin-disease-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # RABBITMQ (Message Queue)
+  # =============================================================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: skin-disease-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rabbitmq}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq123}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # MINIO (Object Storage for Images)
+  # =============================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: skin-disease-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9010:9000"
+      - "9011:9001"  # Console UI
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # API GATEWAY
+  # =============================================================================
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: skin-disease-api-gateway
+    environment:
+      - ENV=development
+      - DEBUG=true
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - PREDICTION_SERVICE_URL=http://prediction-service:8002
+      - ADMIN_SERVICE_URL=http://admin-service:8003
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      prediction-service:
+        condition: service_started
+      admin-service:
+        condition: service_started
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # AUTH SERVICE
+  # =============================================================================
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: skin-disease-auth-service
+    environment:
+      - ENV=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/auth_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/1
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASSWORD:-rabbitmq123}@rabbitmq:5672/
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # PREDICTION SERVICE
+  # =============================================================================
+  prediction-service:
+    build:
+      context: .
+      dockerfile: services/prediction-service/Dockerfile
+    container_name: skin-disease-prediction-service
+    environment:
+      - ENV=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/prediction_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/2
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASSWORD:-rabbitmq123}@rabbitmq:5672/
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/3
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
+      - MINIO_BUCKET=skin-disease-images
+      - MODEL_PATH=/app/models/final_model_CAS.pth
+      - CLASS_MAPPING_PATH=/app/models/class_mapping_ru.json
+    volumes:
+      - ../models:/app/models:ro
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # CELERY WORKER (Async ML Inference)
+  # =============================================================================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: services/prediction-service/Dockerfile.worker
+    container_name: skin-disease-celery-worker
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2 -Q celery,predictions
+    environment:
+      - ENV=development
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/prediction_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/2
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASSWORD:-rabbitmq123}@rabbitmq:5672/
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/3
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/3
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
+      - MINIO_BUCKET=skin-disease-images
+      - MODEL_PATH=/app/models/final_model_CAS.pth
+      - CLASS_MAPPING_PATH=/app/models/class_mapping_ru.json
+    volumes:
+      - ../models:/app/models:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - skin-disease-network
+
+  # =============================================================================
+  # ADMIN SERVICE
+  # =============================================================================
+  admin-service:
+    build:
+      context: .
+      dockerfile: services/admin-service/Dockerfile
+    container_name: skin-disease-admin-service
+    environment:
+      - ENV=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/admin_db
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379/4
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-rabbitmq}:${RABBITMQ_PASSWORD:-rabbitmq123}@rabbitmq:5672/
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - PREDICTION_SERVICE_URL=http://prediction-service:8002
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - skin-disease-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
+
+networks:
+  skin-disease-network:
+    driver: bridge

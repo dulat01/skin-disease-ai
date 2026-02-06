@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: skin-disease
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: skin-disease-ai/api-gateway:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: ENV
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: DEBUG
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: AUTH_SERVICE_URL
+            - name: PREDICTION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: PREDICTION_SERVICE_URL
+            - name: ADMIN_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: ADMIN_SERVICE_URL
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: REDIS_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: skin-disease-secrets
+                  key: JWT_SECRET
+            - name: RATE_LIMIT_REQUESTS
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: RATE_LIMIT_REQUESTS
+            - name: RATE_LIMIT_WINDOW
+              valueFrom:
+                configMapKeyRef:
+                  name: skin-disease-config
+                  key: RATE_LIMIT_WINDOW
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

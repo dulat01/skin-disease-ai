@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skin-disease-config
+  namespace: skin-disease
+data:
+  # Environment
+  ENV: production
+  DEBUG: "false"
+
+  # Service URLs (internal K8s DNS)
+  AUTH_SERVICE_URL: http://auth-service:8001
+  PREDICTION_SERVICE_URL: http://prediction-service:8002
+  ADMIN_SERVICE_URL: http://admin-service:8003
+
+  # Database URLs
+  AUTH_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/auth_db
+  PREDICTION_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/prediction_db
+  ADMIN_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/admin_db
+
+  # Redis URL
+  REDIS_URL: redis://:redis123@redis:6379/0
+
+  # RabbitMQ URL
+  RABBITMQ_URL: amqp://rabbitmq:rabbitmq123@rabbitmq:5672/
+
+  # Celery
+  CELERY_BROKER_URL: redis://:redis123@redis:6379/3
+  CELERY_RESULT_BACKEND: redis://:redis123@redis:6379/3
+
+  # MinIO
+  MINIO_ENDPOINT: minio:9000
+  MINIO_BUCKET: skin-disease-images
+
+  # Model paths
+  MODEL_PATH: /app/models/final_model_CAS.pth
+  CLASS_MAPPING_PATH: /app/models/class_mapping_ru.json
+
+  # Rate limiting
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+
+  # JWT
+  JWT_ALGORITHM: HS256
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  REFRESH_TOKEN_EXPIRE_DAYS: "7"
