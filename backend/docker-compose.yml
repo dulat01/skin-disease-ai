@@ -10,7 +10,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - BACKEND_URL=http://api-gateway:8000
+      - PREDICTION_SERVICE_URL=http://prediction-service:8002
     depends_on:
       api-gateway:
         condition: service_started

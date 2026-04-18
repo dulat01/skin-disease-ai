@@ -12,8 +12,9 @@ from pathlib import Path
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max
 
-# Backend service URL (internal Docker network)
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://api-gateway:8000')
+# Backend service URLs (internal Docker network)
+# For web frontend, we bypass API gateway and call prediction service directly
+PREDICTION_SERVICE_URL = os.getenv('PREDICTION_SERVICE_URL', 'http://prediction-service:8002')
 UPLOAD_FOLDER = '/tmp/uploads'
 
 Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
@@ -49,7 +50,7 @@ def predict():
             headers = {'X-User-ID': 'web-user'}
 
             response = requests.post(
-                f"{BACKEND_URL}/api/v1/predictions/",
+                f"{PREDICTION_SERVICE_URL}/api/v1/predictions/",
                 files=files,
                 headers=headers,
                 timeout=30
@@ -76,7 +77,8 @@ def predict():
 def health():
     """Check backend health"""
     try:
-        response = requests.get(f"{BACKEND_URL}/health", timeout=5)
+        # Check prediction service health
+        response = requests.get(f"{PREDICTION_SERVICE_URL}/health", timeout=5)
         if response.status_code == 200:
             return jsonify({'status': 'healthy', 'backend': response.json()})
         else:
