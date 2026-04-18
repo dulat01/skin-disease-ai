@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 import requests
 import os
 from pathlib import Path
+import uuid
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max
@@ -47,7 +48,7 @@ def predict():
         # Send to backend
         with open(filepath, 'rb') as f:
             files = {'image': (filename, f, 'image/jpeg')}
-            headers = {'X-User-ID': 'web-user'}
+            headers = {'X-User-ID': str(uuid.uuid4())}
 
             response = requests.post(
                 f"{PREDICTION_SERVICE_URL}/api/v1/predictions/",
