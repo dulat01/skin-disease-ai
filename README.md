@@ -1,228 +1,243 @@
 # 🩺 Skin Disease Classification AI
 
-A universal deep learning model for skin disease classification using PyTorch and EfficientNet-B4. This system can diagnose 20 different types of skin conditions with high accuracy.
+A **fully integrated microservices system** with web GUI for skin disease classification using PyTorch deep learning. Diagnose 20 different types of skin conditions with high accuracy using a containerized, production-ready architecture.
 
-## 🎯 Features
+## 🎯 Key Features
 
-- **20 Disease Classes**: Covers a wide spectrum of skin diseases from 3 major datasets
-- **State-of-the-art Architecture**: Uses EfficientNet-B4 with transfer learning
-- **High Accuracy**: Achieves competitive performance on medical imaging benchmarks
-- **Easy to Use**: Simple GUI interface for testing predictions
-- **Production Ready**: Two-stage training with data augmentation and class balancing
+- **🐳 Fully Dockerized**: One command starts entire system
+- **🌐 Web GUI**: Beautiful drag-and-drop interface
+- **🧠 20 Disease Classes**: Comprehensive skin disease coverage
+- **⚡ Real-time Inference**: ML predictions in milliseconds
+- **🔄 Microservices**: Scalable, independent services
+- **💾 Persistent Storage**: PostgreSQL, Redis, MinIO
+- **📊 Admin Dashboard**: Analytics and management UI
+
+## 🚀 Quick Start (Docker)
+
+### Prerequisites
+
+- **Docker** and **Docker Compose** installed
+- ~5GB disk space
+- ~4GB RAM available
+
+### Start Everything (One Command!)
+
+```bash
+cd backend
+make up
+```
+
+This starts:
+- ✅ Frontend Web GUI (http://localhost:3000)
+- ✅ Prediction Service (ML model inference)
+- ✅ Auth Service (user management)
+- ✅ Admin Service (analytics)
+- ✅ PostgreSQL Database
+- ✅ Redis Cache
+- ✅ RabbitMQ Message Queue
+- ✅ MinIO Image Storage
+
+### Access the Application
+
+Open your browser:
+```
+http://localhost:3000
+```
+
+Then:
+1. Upload or drag a skin disease image (JPEG/PNG)
+2. Click "Analyze Image"
+3. View diagnosis with confidence scores and malignancy status
 
 ## 📊 Supported Diseases
 
-The model can classify the following skin conditions:
+The model classifies 20 skin conditions from 3 datasets:
 
-### DermaMNIST (7 classes)
-- Melanocytic nevi
-- Melanoma
-- Benign keratosis
-- Basal cell carcinoma
-- Actinic keratoses
-- Vascular lesions
-- Dermatofibroma
+**PAD-UFES-20**: Melanoma, Basal Cell Carcinoma, Squamous Cell Carcinoma, Actinic Keratosis, Nevus, Seborrheic Keratosis
 
-### PAD-UFES-20 (6 classes)
-- Melanoma (MEL)
-- Basal Cell Carcinoma (BCC)
-- Squamous Cell Carcinoma (SCC)
-- Actinic Keratosis (ACK)
-- Nevus (NEV)
-- Seborrheic Keratosis (SEK)
+**DermaMNIST**: Melanocytic nevi, Melanoma, Benign keratosis, Basal cell carcinoma, Actinic keratoses, Vascular lesions, Dermatofibroma
 
-### HAM10000 (7 classes)
-- Actinic keratoses
-- Basal cell carcinoma
-- Benign keratosis-like lesions
-- Dermatofibroma
-- Melanoma
-- Melanocytic nevi
-- Vascular lesions
+**HAM10000**: Actinic keratoses, Basal cell carcinoma, Benign keratosis-like lesions, Dermatofibroma, Melanoma, Melanocytic nevi, Vascular lesions
 
-## 🚀 Quick Start
+## 🏗️ Architecture
 
-### 1. Clone the Repository
+```
+Browser (http://localhost:3000)
+    │
+    └─> Frontend Container (Flask)
+            │
+            └─> Docker Internal Network
+                    │
+                    ├─> Prediction Service (ML inference)
+                    ├─> Auth Service
+                    ├─> Admin Service
+                    └─> Infrastructure
+                        ├─> PostgreSQL
+                        ├─> Redis
+                        ├─> RabbitMQ
+                        └─> MinIO
+```
+
+All services communicate securely within Docker. Only necessary ports exposed to host.
+
+## 🔧 Common Commands
 
 ```bash
-git clone https://github.com/dulat01/skin-disease-ai.git
-cd skin-disease-ai
+cd backend
+
+make up         # Start all services
+make down       # Stop all services
+make ps         # List all containers
+make logs       # View all logs
+make logs-f     # Follow logs in real-time
+make health     # Check service health
+make clean      # Remove all containers & volumes
 ```
 
-### 2. Installation
+## 📚 Detailed Documentation
 
-Run the installation script to set up the environment:
+For more information, see:
+
+- **[README_INTEGRATED.md](README_INTEGRATED.md)** - Comprehensive system guide
+  - Full architecture overview
+  - All available commands
+  - Troubleshooting guide
+  - API testing examples
+  - Scaling information
+  - Security notes
+
+## 🎓 Training & Development
+
+### Local Development (Optional)
+
+For training a custom model or running locally:
 
 ```bash
-install.bat
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests locally
+python predict_single_image.py
+python predict_universal.py
 ```
 
-This will:
-- Create a Python virtual environment
-- Install PyTorch with CPU support
-- Install all required dependencies
+See [BACKEND_SETUP.md](BACKEND_SETUP.md) for detailed development instructions.
 
-**Note**: The repository already includes:
-- ✅ Trained model (`models/final_model_CAS.pth` - 39.6 MB)
-- ✅ Class mappings (`models/class_mapping_ru.json`)
-- ✅ 30 test images in `TEST_IMAGES/` folder
+## 📋 System Requirements
 
-You can start testing immediately after installation!
-
-### 3. Test the Model (No Training Needed!)
-
-#### Option A: Simple Single-Image GUI (Recommended for Quick Testing)
-
-```bash
-test_single.bat
-```
-
-This launches a beautiful GUI where you can:
-- 📂 Load any skin lesion image
-- 🎯 See the main diagnosis with confidence percentage
-- 🔴/🟢 View malignancy status (benign vs malignant)
-- 📊 View TOP-3 predictions with probability bars
-
-#### Option B: Universal Model Testing
-
-```bash
-test.bat
-```
-
-For testing the universal model with 20 disease classes.
-
----
-
-## 🎓 Training Your Own Model (Optional)
-
-If you want to retrain the model from scratch:
-
-### 1. Prepare Datasets
-
-Download the following datasets and place them in the `dataset/` folder:
-
-- **DermaMNIST**: `dermamnist_224.npz` (from MedMNIST)
-- **PAD-UFES-20**: Extract to `dataset/PAD_UFES_20/`
-- **HAM10000**: Extract images and metadata to `dataset/HAM10000/`
-
-### 2. Train the Model
-
-Run the training script (2-5 hours depending on your hardware):
-
-```bash
-train.bat
-```
-
-The training uses a two-stage approach:
-- **Stage 1** (10 epochs): Train only the classification head with frozen base
-- **Stage 2** (20 epochs): Fine-tune all layers with lower learning rate
-
-## 🏗️ Project Structure
-
-```
-├── install.bat              # Setup environment
-├── train.bat                # Train the model
-├── test.bat                 # Test universal model (20 classes)
-├── test_single.bat          # Test single image GUI (6 classes)
-├── train_universal_model.py # Training script
-├── predict_universal.py     # Universal model GUI
-├── predict_single_image.py  # Single image GUI (simple & beautiful)
-├── setup_pytorch_environment.py  # Dependency installer
-├── requirements.txt         # Python dependencies
-├── dataset/                 # Place your datasets here
-├── models/                  # Trained models saved here
-├── results/                 # Training results and plots
-└── TEST_IMAGES/             # Sample test images (30 examples)
-```
-
-## 🧠 Model Architecture
-
-- **Base Model**: EfficientNet-B4 (pre-trained on ImageNet)
-- **Input Size**: 224x224 RGB images
-- **Output**: 20-class classification with softmax
-- **Optimizer**: Adam with learning rate scheduling
-- **Loss Function**: Cross-Entropy with class weights
-- **Data Augmentation**: Random flips, rotations, color jitter, resizing
-
-## 📈 Training Details
-
-### Data Augmentation
-- Random horizontal/vertical flips
-- Random rotations (±15°)
-- Color jitter (brightness, contrast, saturation)
-- Random resized crop (0.8-1.0 scale)
-
-### Class Imbalance Handling
-- Weighted Random Sampler for training
-- Class weights in loss function
-- Balanced validation set
-
-### Two-Stage Training Strategy
-1. **Stage 1**: Freeze base layers, train only the head
-   - Learning rate: 0.001
-   - Batch size: 32
-   - Epochs: 10
-
-2. **Stage 2**: Fine-tune all layers
-   - Learning rate: 0.0001
-   - Batch size: 32
-   - Epochs: 20
-   - ReduceLROnPlateau scheduler
-
-## 📋 Requirements
-
-- Python 3.10+
-- PyTorch 2.0+
-- torchvision
-- NumPy < 2.0 (compatibility)
-- Pillow
-- matplotlib
-- scikit-learn
-- tqdm
+- **Docker**: Latest version
+- **Docker Compose**: v2.0+
+- **RAM**: 4GB minimum (8GB recommended)
+- **Disk**: 5GB free space
+- **OS**: Linux, macOS, or Windows (with WSL2)
 
 ## ⚠️ Medical Disclaimer
 
 This AI model is designed as a **diagnostic aid tool** only. It should **NOT** replace professional medical consultation. Always consult with a qualified dermatologist for proper diagnosis and treatment.
 
+## 🔐 Security & Deployment
+
+**Development Mode** (Default):
+- Debug mode enabled
+- Default credentials used
+- Suitable for testing only
+
+**Production Deployment**:
+1. Change all default credentials in `.env`
+2. Enable HTTPS/TLS
+3. Set strong JWT secrets
+4. Use environment-based configuration
+5. Set up monitoring and backups
+
+See [README_INTEGRATED.md](README_INTEGRATED.md) for production deployment guide.
+
+## 🐛 Troubleshooting
+
+**Services not starting?**
+```bash
+# Check if ports are free
+lsof -i :3000
+lsof -i :5433
+lsof -i :6380
+
+# View detailed logs
+docker-compose logs -f
+```
+
+**Image upload fails?**
+- Ensure image is JPEG or PNG format
+- Check file size is under 10MB
+- Verify backend services are healthy: `make health`
+
+**Port conflicts?**
+- Edit `backend/docker-compose.yml`
+- Change port mappings
+- Restart: `make clean && make up`
+
+See [README_INTEGRATED.md](README_INTEGRATED.md) for more troubleshooting.
+
+## 📦 Project Structure
+
+```
+├── frontend/                 # Web GUI (Flask + HTML/CSS/JS)
+│   ├── app.py               # Flask backend
+│   ├── Dockerfile           # Container definition
+│   ├── requirements.txt      # Python dependencies
+│   └── templates/
+│       └── index.html       # Web interface
+│
+├── backend/                 # Microservices & infrastructure
+│   ├── docker-compose.yml   # Orchestration
+│   ├── Makefile             # Helper commands
+│   ├── services/
+│   │   ├── api-gateway/
+│   │   ├── auth-service/
+│   │   ├── prediction-service/
+│   │   └── admin-service/
+│   └── scripts/             # Database initialization
+│
+├── models/                  # Pre-trained ML models
+│   ├── final_model_CAS.pth  # ResNet18 model (39.6 MB)
+│   └── class_mapping_ru.json # Disease class labels
+│
+└── TEST_IMAGES/            # Sample test images (30 examples)
+    ├── (various disease categories)
+```
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues.
-
-## 📄 License
-
-This project is for educational and research purposes.
+Contributions welcome! For major changes:
+1. Create a feature branch
+2. Test thoroughly
+3. Submit a pull request
 
 ## 🙏 Acknowledgments
 
-- **DermaMNIST**: Part of the MedMNIST dataset collection
-- **PAD-UFES-20**: Public dermatoscopic dataset from UFES
-- **HAM10000**: Harvard Dataverse skin lesion dataset
-- **EfficientNet**: Google Research architecture
-- **CAS_ISIC**: Inspiration from the CAS-ISIC project
+- **DermaMNIST**: MedMNIST dataset collection
+- **PAD-UFES-20**: UFES public dermatoscopic dataset
+- **HAM10000**: Harvard skin lesion dataset
+- **PyTorch**: Deep learning framework
+- **Flask**: Web framework
+- **Docker**: Containerization
 
-## 📦 Publishing to GitHub
+## 📄 License
 
-This repository is ready to be pushed to GitHub:
-
-1. **Create a new private repository** on GitHub: https://github.com/new
-   - Name: `skin-disease-ai` (or any name you prefer)
-   - Privacy: **Private**
-   - Don't add README, .gitignore, or license (already included)
-
-2. **Push your code**:
-```bash
-git remote add origin https://github.com/YOUR-USERNAME/skin-disease-ai.git
-git branch -M main
-git push -u origin main
-```
-
-3. **Note**: Datasets are not included in the repository (too large). Users must download them separately and place in `dataset/` folder.
+Educational and research purposes.
 
 ## 📞 Support
 
-For questions or issues, please open an issue on GitHub.
+For issues or questions:
+1. Check [README_INTEGRATED.md](README_INTEGRATED.md) troubleshooting section
+2. Review service logs: `make logs-f`
+3. Open an issue on GitHub
 
 ---
 
-**Made with ❤️ for advancing medical AI diagnostics**
+**Everything runs in Docker. Get started in seconds!**
+
+```bash
+cd backend && make up
+```
+
+Then open: **http://localhost:3000** 🎉
 

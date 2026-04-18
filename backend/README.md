@@ -42,80 +42,60 @@ Production-ready microservices architecture for skin disease classification usin
 ### Prerequisites
 
 - **Docker** and **Docker Compose** (v2.0+)
-- **8GB RAM** minimum (ML model + all services)
-- Ports available: 5432, 6379, 5672, 8000-8003, 9010-9011
+- **GNU Make** (or use `docker-compose` commands directly)
+- **4GB RAM** minimum (8GB recommended)
+- Available ports: 3000, 5433, 6380, 5672, 8000-8003, 9010-9011, 15672
 
-### 1. Start All Services
+### 1. Start All Services (One Command!)
 
 ```bash
 cd backend
-docker compose up -d
+make up
 ```
 
-Wait for all services to be healthy (about 30-60 seconds):
+This starts:
+- ✅ Frontend Web GUI (port 3000)
+- ✅ API Gateway (port 8000)
+- ✅ Auth Service (port 8001)
+- ✅ Prediction Service (port 8002)
+- ✅ Admin Service (port 8003)
+- ✅ PostgreSQL, Redis, RabbitMQ, MinIO
+
+**First run**: 3-5 minutes (building images)
+**Subsequent runs**: Instant
+
+### 2. Access the Web Interface
+
+Open your browser:
+
+```
+http://localhost:3000
+```
+
+You can now:
+- Upload skin disease images
+- View instant predictions with confidence scores
+- See malignancy status (benign/malignant)
+- View top-3 disease predictions
+
+### 3. Check Service Status
 
 ```bash
-docker compose ps
+# List all running containers
+make ps
+
+# Check service health
+make health
+
+# View logs in real-time
+make logs-f
 ```
 
-All containers should show "Up" or "Up (healthy)".
+All services should show "healthy" status.
 
-### 2. Run Quick Test
+### 4. API Testing (Advanced)
 
-```bash
-./scripts/quick_test.sh
-```
-
-Expected output:
-```
-=== Skin Disease AI - Quick Test ===
-
-1. Checking services...
-   All services are healthy!
-
-2. Registering user: demo_xxx@test.com
-   User registered and logged in!
-
-3. Making prediction on: example.png
-
-   =========================================
-   PREDICTION RESULT
-   =========================================
-   Diagnosis: Актинический кератоз
-   Confidence: 99.4%
-   Status: DANGEROUS - See a doctor!
-
-   Top predictions:
-   [!] Актинический кератоз: 99.4%
-   [!] Плоскоклеточная карцинома: 0.2%
-   [!] Базальноклеточная карцинома: 0.2%
-   =========================================
-
-4. Getting prediction history...
-   Total predictions in history: 1
-
-=== Test Complete ===
-```
-
-### 3. Try the API
-
-**Register a user:**
-```bash
-curl -X POST http://localhost:8000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"YourPass123","full_name":"Your Name"}'
-```
-
-**Make a prediction** (use the access_token from registration):
-```bash
-curl -X POST http://localhost:8000/api/v1/predictions/ \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -F "image=@path/to/skin_image.png"
-```
-
-### 4. Interactive API Docs
-
-Open in your browser:
+**Get API documentation:**
 
 | Service | Swagger UI |
 |---------|------------|
@@ -123,6 +103,12 @@ Open in your browser:
 | Auth Service | http://localhost:8001/docs |
 | Prediction Service | http://localhost:8002/docs |
 | Admin Service | http://localhost:8003/docs |
+
+**Direct API test:**
+```bash
+# Test prediction service health
+curl http://localhost:8002/health
+```
 
 ## Services Overview
 
@@ -172,15 +158,30 @@ Open in your browser:
 
 ## Common Commands
 
+### Using Make (Recommended)
+
+```bash
+make up              # Start all services
+make down            # Stop all services
+make ps              # List all containers
+make logs            # View all logs (one page)
+make logs-f          # Follow all logs in real-time
+make health          # Check service health status
+make clean           # Remove all containers & volumes
+make shell-pred      # Shell into prediction service
+make shell-auth      # Shell into auth service
+make shell-admin     # Shell into admin service
+make shell-db        # PostgreSQL shell (psql)
+```
+
+### Using Docker Compose Directly
+
 ```bash
 # Start all services
 docker compose up -d
 
 # Stop all services
 docker compose down
-
-# View logs (all services)
-docker compose logs -f
 
 # View specific service logs
 docker compose logs -f prediction-service
@@ -189,17 +190,25 @@ docker compose logs -f prediction-service
 docker compose restart auth-service
 
 # Rebuild after code changes
-docker compose build auth-service
-docker compose up -d auth-service
+docker compose build prediction-service
+docker compose up -d prediction-service
+```
 
-# Check service health
-curl http://localhost:8000/health
+### Database Access
 
+```bash
 # Access PostgreSQL
+make shell-db
+
+# Or directly:
 docker compose exec postgres psql -U postgres -d auth_db
 
 # Access Redis
 docker compose exec redis redis-cli -a redis123
+
+# Access MinIO console
+# Open http://localhost:9011 in browser
+# Login: minioadmin / minioadmin123
 ```
 
 ## Test Images
