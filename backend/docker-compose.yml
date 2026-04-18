@@ -1,5 +1,25 @@
 services:
   # =============================================================================
+  # FRONTEND (Web GUI)
+  # =============================================================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: skin-disease-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=http://api-gateway:8000
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - skin-disease-network
+    volumes:
+      - /tmp/uploads:/tmp/uploads
+
+  # =============================================================================
   # DATABASES
   # =============================================================================
   postgres:

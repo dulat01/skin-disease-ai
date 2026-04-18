@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Skin Disease Diagnosis AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 20px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .status.healthy {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section h2 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .upload-box {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-box:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-box.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .button-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .button-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results-box {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+        }
+
+        .results-box.show {
+            display: block;
+        }
+
+        .main-result {
+            background: white;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .result-class {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .result-confidence {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .malignant-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .malignant {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .benign {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .top-predictions {
+            margin-top: 20px;
+        }
+
+        .top-predictions h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .prediction-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .prediction-item-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .prediction-item-conf {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 Skin Disease Diagnosis AI</h1>
+            <p>ResNet18 Model | 77.10% Accuracy | CAS_ISIC Dataset</p>
+        </div>
+
+        <div id="statusBar" class="status healthy">
+            ✅ Backend Connected
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="section">
+                <h2>📂 Upload Image</h2>
+                <div class="upload-box" id="uploadBox">
+                    <div style="font-size: 2em; margin-bottom: 10px;">📤</div>
+                    <p style="font-weight: bold; color: #667eea;">Drag & drop image here</p>
+                    <p style="color: #999; font-size: 0.9em;">or click to select</p>
+                    <p style="color: #999; font-size: 0.8em; margin-top: 10px;">Supported: JPEG, PNG (Max 10MB)</p>
+                    <input type="file" id="imageInput" accept="image/*">
+                </div>
+                <img id="imagePreview" alt="Preview">
+                <button class="button button-primary" id="predictBtn" disabled>🔍 Analyze Image</button>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="section">
+                <h2>📊 Diagnosis Results</h2>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px; color: #666;">Analyzing image...</p>
+                </div>
+
+                <div class="results-box" id="resultsBox">
+                    <div class="main-result">
+                        <div class="result-class" id="resultClass">—</div>
+                        <div class="result-confidence">
+                            Confidence: <span id="resultConfidence">0%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidenceFill"></div>
+                        </div>
+                        <div class="malignant-badge" id="resultBadge">—</div>
+                    </div>
+
+                    <div class="top-predictions">
+                        <h3>🏆 Top Predictions</h3>
+                        <div id="topPredictionsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadBox = document.getElementById('uploadBox');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const predictBtn = document.getElementById('predictBtn');
+        const resultsBox = document.getElementById('resultsBox');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const statusBar = document.getElementById('statusBar');
+        let selectedFile = null;
+
+        // Check backend health on load
+        checkBackendHealth();
+
+        // Drag & drop
+        uploadBox.addEventListener('click', () => imageInput.click());
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageSelect(files[0]);
+            }
+        });
+
+        // File input change
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageSelect(e.target.files[0]);
+            }
+        });
+
+        function handleImageSelect(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                predictBtn.disabled = false;
+                resultsBox.classList.remove('show');
+                errorMessage.classList.remove('show');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Predict button
+        predictBtn.addEventListener('click', predict);
+
+        async function predict() {
+            if (!selectedFile) return;
+
+            predictBtn.disabled = true;
+            loading.style.display = 'block';
+            resultsBox.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayResults(data.data || data);
+                } else {
+                    showError(data.error || 'Prediction failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+                predictBtn.disabled = false;
+            }
+        }
+
+        function displayResults(result) {
+            const confidence = (result.confidence * 100).toFixed(1);
+            const isMalignant = result.is_malignant;
+
+            document.getElementById('resultClass').textContent = result.predicted_class;
+            document.getElementById('resultConfidence').textContent = confidence + '%';
+            document.getElementById('confidenceFill').style.width = confidence + '%';
+
+            const badge = document.getElementById('resultBadge');
+            if (isMalignant) {
+                badge.textContent = '🔴 MALIGNANT - SEEK MEDICAL HELP';
+                badge.className = 'malignant-badge malignant';
+            } else {
+                badge.textContent = '🟢 BENIGN - LOW RISK';
+                badge.className = 'malignant-badge benign';
+            }
+
+            // Top predictions
+            const topList = document.getElementById('topPredictionsList');
+            topList.innerHTML = '';
+            (result.top_predictions || []).forEach((pred, i) => {
+                const conf = (pred.confidence * 100).toFixed(1);
+                const emoji = pred.is_malignant ? '🔴' : '🟢';
+                topList.innerHTML += `
+                    <div class="prediction-item">
+                        <div class="prediction-item-name">${i + 1}. ${emoji} ${pred.class_name}</div>
+                        <div class="prediction-item-conf">Confidence: ${conf}%</div>
+                    </div>
+                `;
+            });
+
+            resultsBox.classList.add('show');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = '❌ ' + message;
+            errorMessage.classList.add('show');
+        }
+
+        async function checkBackendHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                if (data.status === 'healthy') {
+                    statusBar.textContent = '✅ Backend Connected';
+                    statusBar.className = 'status healthy';
+                } else {
+                    statusBar.textContent = '⚠️ Backend Error';
+                    statusBar.className = 'status error';
+                }
+            } catch (error) {
+                statusBar.textContent = '❌ Backend Unavailable';
+                statusBar.className = 'status error';
+            }
+        }
+
+        // Check health every 10 seconds
+        setInterval(checkBackendHealth, 10000);
+    </script>
+</body>
+</html>
