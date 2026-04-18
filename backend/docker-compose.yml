@@ -12,7 +12,7 @@ services:
     environment:
       - PREDICTION_SERVICE_URL=http://prediction-service:8002
     depends_on:
-      api-gateway:
+      prediction-service:
         condition: service_started
     networks:
       - skin-disease-network
