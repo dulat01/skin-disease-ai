@@ -15,7 +15,7 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max
 
 # Backend service URLs (internal Docker network)
 # For web frontend, we bypass API gateway and call prediction service directly
-PREDICTION_SERVICE_URL = os.getenv('PREDICTION_SERVICE_URL', 'http://prediction-service:8002')
+PREDICTION_SERVICE_URL = 'http://prediction-service:8002'
 UPLOAD_FOLDER = '/tmp/uploads'
 
 Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
@@ -48,10 +48,12 @@ def predict():
         # Send to backend
         with open(filepath, 'rb') as f:
             files = {'image': (filename, f, 'image/jpeg')}
-            headers = {'X-User-ID': str(uuid.uuid4())}
+            user_id = str(uuid.uuid4())
+            headers = {'X-User-ID': user_id}
+            url = f"{PREDICTION_SERVICE_URL}/api/v1/predictions/"
 
             response = requests.post(
-                f"{PREDICTION_SERVICE_URL}/api/v1/predictions/",
+                url,
                 files=files,
                 headers=headers,
                 timeout=30

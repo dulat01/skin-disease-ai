@@ -10,7 +10,7 @@ COPY . .
 
 # Environment
 ENV FLASK_APP=app.py
-ENV BACKEND_URL=http://api-gateway:8000
+ENV PREDICTION_SERVICE_URL=http://prediction-service:8002
 
 # Expose port
 EXPOSE 3000
