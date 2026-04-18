@@ -1,306 +1,237 @@
 """
 🎯 GUI ДЛЯ ТЕСТИРОВАНИЯ УНИВЕРСАЛЬНОЙ МОДЕЛИ
-Поддерживает 14+ классов кожных заболеваний
+Поддерживает 14+ классов кожных заболеваний через backend API
 """
 
-import os
-import sys
 import json
-import torch
-import torch.nn as nn
-from torchvision import models, transforms
-from PIL import Image
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-
-# ============================================================================
-# 📊 КОНФИГУРАЦИЯ
-# ============================================================================
-
-MODEL_PATH = 'models/universal_model_FINAL.pth'
-MAPPING_PATH = 'models/universal_class_mapping.json'
-IMG_SIZE = 224
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-# ============================================================================
-# 🔄 ЗАГРУЗКА МАППИНГА КЛАССОВ
-# ============================================================================
-
-if not os.path.exists(MAPPING_PATH):
-    print(f"❌ Файл маппинга не найден: {MAPPING_PATH}")
-    print(f"   Сначала обучите модель: python train_universal_model.py")
-    sys.exit(1)
-
-with open(MAPPING_PATH, 'r', encoding='utf-8') as f:
-    mapping_data = json.load(f)
-
-CLASSES = mapping_data['classes']
-NUM_CLASSES = mapping_data['num_classes']
-
-print(f"✅ Загружен маппинг: {NUM_CLASSES} классов")
+from backend_client import BackendClient
 
 # Описания классов
 CLASS_DESCRIPTIONS = {
-    # DermaMNIST
     'ACN': ('Акне и Розацеа', '✅', 'Доброкачественное'),
     'ADE': ('Атопический Дерматит', '⚠️', 'Доброкачественное'),
     'BKL': ('Доброкачественный Кератоз', '✅', 'Доброкачественное'),
-    'BKL_HAM': ('Доброкачественный Кератоз (HAM)', '✅', 'Доброкачественное'),
     'LPL': ('Красный Плоский Лишай', '⚠️', 'Доброкачественное'),
     'MEL': ('Меланома', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
-    'MEL_PAD': ('Меланома (PAD)', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
-    'MEL_HAM': ('Меланома (HAM)', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
     'BCC': ('Базальноклеточная Карцинома', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
-    'BCC_PAD': ('Базальноклеточная Карцинома (PAD)', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
-    'BCC_HAM': ('Базальноклеточная Карцинома (HAM)', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
     'SEK': ('Себорейный Кератоз', '✅', 'Доброкачественное'),
-    'SEK_PAD': ('Себорейный Кератоз (PAD)', '✅', 'Доброкачественное'),
-    # PAD-UFES-20
     'ACK': ('Актинический Кератоз', '⚠️', 'Предраковое'),
     'NEV': ('Невус (Родинка)', '✅', 'Доброкачественное'),
     'SCC': ('Плоскоклеточная Карцинома', '☠️', 'ЗЛОКАЧЕСТВЕННОЕ'),
-    # HAM10000
-    'AKI': ('Актинический Кератоз (HAM)', '⚠️', 'Предраковое'),
     'DF': ('Дерматофиброма', '✅', 'Доброкачественное'),
     'NV': ('Меланоцитарный Невус', '✅', 'Доброкачественное'),
     'VASC': ('Сосудистые Поражения', '⚠️', 'Доброкачественное'),
 }
 
-# ============================================================================
-# 🧠 ЗАГРУЗКА МОДЕЛИ
-# ============================================================================
-
-print(f"🧠 Загрузка модели: {MODEL_PATH}")
-
-if not os.path.exists(MODEL_PATH):
-    print(f"❌ Модель не найдена: {MODEL_PATH}")
-    print(f"   Сначала обучите модель: python train_universal_model.py")
-    sys.exit(1)
-
-# Создание модели
-model = models.efficientnet_b4(weights=None)
-num_features = model.classifier[1].in_features
-model.classifier = nn.Sequential(
-    nn.Dropout(p=0.4),
-    nn.Linear(num_features, NUM_CLASSES)
-)
-
-# Загрузка весов
-state_dict = torch.load(MODEL_PATH, map_location=device)
-model.load_state_dict(state_dict)
-model = model.to(device)
-model.eval()
-
-print(f"✅ Модель загружена успешно!\n")
-
-# Трансформации
-transform = transforms.Compose([
-    transforms.Resize((IMG_SIZE, IMG_SIZE)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-
-# ============================================================================
-# 🔮 ФУНКЦИЯ ПРЕДСКАЗАНИЯ
-# ============================================================================
-
-def predict_image(image_path):
-    """Предсказание для изображения"""
-    try:
-        # Загрузка и предобработка
-        img = Image.open(image_path).convert('RGB')
-        img_tensor = transform(img).unsqueeze(0).to(device)
-        
-        # Предсказание
-        with torch.no_grad():
-            outputs = model(img_tensor)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)
-            probs = probabilities.cpu().numpy()[0]
-        
-        # Топ-5 предсказаний
-        top5_idx = np.argsort(probs)[::-1][:5]
-        top5_probs = probs[top5_idx]
-        top5_classes = [CLASSES[idx] for idx in top5_idx]
-        
-        return img, top5_classes, top5_probs
-    
-    except Exception as e:
-        messagebox.showerror("Ошибка", f"Не удалось обработать изображение:\n{str(e)}")
-        return None, None, None
-
-# ============================================================================
-# 🖼️ GUI
-# ============================================================================
-
-class UniversalModelGUI:
+class UniversalSkinDiseaseApp:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"🌟 Универсальная Диагностика Кожных Заболеваний ({NUM_CLASSES} классов)")
-        self.root.geometry("1400x900")
-        self.root.configure(bg='#f0f0f0')
-        
+        self.current_image_path = None
+
+        try:
+            self.client = BackendClient()
+            if not self.client.health_check():
+                raise ConnectionError("Backend not responding")
+            self.backend_connected = True
+        except Exception as e:
+            self.backend_connected = False
+            self.error_msg = str(e)
+
+        self.root.title("🎯 УНИВЕРСАЛЬНАЯ ДИАГНОСТИКА ЗАБОЛЕВАНИЙ КОЖИ")
+        self.root.geometry("1200x800")
+        self.root.configure(bg='#2C3E50')
+
         # Заголовок
-        title_frame = tk.Frame(root, bg='#2c3e50', height=80)
-        title_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        title_label = tk.Label(
-            title_frame,
-            text=f"🌟 УНИВЕРСАЛЬНАЯ СИСТЕМА ДИАГНОСТИКИ\n{NUM_CLASSES} типов кожных заболеваний",
-            font=('Arial', 18, 'bold'),
-            bg='#2c3e50',
+        header = tk.Frame(root, bg='#34495E')
+        header.pack(fill=tk.X, padx=10, pady=10)
+
+        title = tk.Label(
+            header,
+            text="🎯 УНИВЕРСАЛЬНАЯ ДИАГНОСТИКА ЗАБОЛЕВАНИЙ КОЖИ",
+            font=("Arial", 20, "bold"),
+            bg='#34495E',
             fg='white'
         )
-        title_label.pack(pady=15)
-        
+        title.pack(pady=15)
+
+        # Информация
+        info_frame = tk.Frame(root, bg='#2C3E50')
+        info_frame.pack(fill=tk.X, padx=20, pady=5)
+
+        status_text = "✅ Backend Connected" if self.backend_connected else "❌ Backend Disconnected"
+        status_color = '#2ECC71' if self.backend_connected else '#E74C3C'
+
+        model_info = tk.Label(
+            info_frame,
+            text=f"{status_text} | 14+ классов заболеваний",
+            font=("Arial", 10),
+            bg='#2C3E50',
+            fg=status_color
+        )
+        model_info.pack()
+
+        if not self.backend_connected:
+            error_label = tk.Label(
+                info_frame,
+                text=f"Error: {self.error_msg}",
+                font=("Arial", 9),
+                bg='#2C3E50',
+                fg='#E74C3C'
+            )
+            error_label.pack()
+
         # Кнопка загрузки
-        btn_frame = tk.Frame(root, bg='#f0f0f0')
-        btn_frame.pack(pady=10)
-        
+        btn_frame = tk.Frame(root, bg='#2C3E50')
+        btn_frame.pack(pady=15)
+
         self.load_btn = tk.Button(
             btn_frame,
             text="📂 ЗАГРУЗИТЬ ИЗОБРАЖЕНИЕ",
             command=self.load_image,
-            font=('Arial', 14, 'bold'),
-            bg='#3498db',
+            font=("Arial", 14, "bold"),
+            bg='#3498DB',
             fg='white',
+            activebackground='#2980B9',
             padx=30,
             pady=15,
-            relief=tk.RAISED,
-            bd=3
+            state=tk.NORMAL if self.backend_connected else tk.DISABLED
         )
         self.load_btn.pack()
-        
-        # Основной контейнер
-        main_frame = tk.Frame(root, bg='#f0f0f0')
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
-        # Левая панель (изображение)
-        left_frame = tk.Frame(main_frame, bg='white', relief=tk.SOLID, bd=2)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-        
-        self.image_label = tk.Label(left_frame, text="Загрузите изображение", bg='white', font=('Arial', 12))
-        self.image_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Правая панель (результаты)
-        right_frame = tk.Frame(main_frame, bg='white', relief=tk.SOLID, bd=2)
-        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        # Результаты
-        results_title = tk.Label(
-            right_frame,
-            text="📊 РЕЗУЛЬТАТЫ АНАЛИЗА",
-            font=('Arial', 16, 'bold'),
-            bg='white'
-        )
-        results_title.pack(pady=10)
-        
+
+        # Основной контент
+        content = tk.Frame(root, bg='#2C3E50')
+        content.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # Левая колонна - изображение
+        left_frame = tk.Frame(content, bg='#34495E')
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        img_label = tk.Label(left_frame, text="ИЗОБРАЖЕНИЕ", bg='#34495E', fg='white', font=("Arial", 12, "bold"))
+        img_label.pack(pady=10)
+
+        self.image_display = tk.Label(left_frame, bg='#1C2833', width=30, height=20)
+        self.image_display.pack(pady=10, fill=tk.BOTH, expand=True)
+
+        # Правая колонна - результаты
+        right_frame = tk.Frame(content, bg='#34495E')
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(20, 0))
+
+        result_label = tk.Label(right_frame, text="РЕЗУЛЬТАТЫ", bg='#34495E', fg='white', font=("Arial", 12, "bold"))
+        result_label.pack(pady=10)
+
+        # Основное предсказание
+        self.main_prediction = tk.Frame(right_frame, bg='#2C3E50')
+        self.main_prediction.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        self.pred_text = tk.Label(self.main_prediction, text="", bg='#2C3E50', fg='#ECF0F1', font=("Arial", 11), wraplength=350, justify=tk.LEFT)
+        self.pred_text.pack(fill=tk.BOTH, expand=True)
+
         # График вероятностей
-        self.fig, self.ax = plt.subplots(figsize=(7, 6))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=right_frame)
-        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Текстовое описание
-        self.result_text = tk.Text(right_frame, height=8, font=('Arial', 11), wrap=tk.WORD)
-        self.result_text.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
-        # Футер
-        footer = tk.Label(
-            root,
-            text="⚠️ ВНИМАНИЕ: Это только помощь в диагностике! Всегда консультируйтесь с врачом-дерматологом!",
-            font=('Arial', 10, 'italic'),
-            bg='#e74c3c',
-            fg='white',
-            pady=10
-        )
-        footer.pack(fill=tk.X)
-    
+        self.canvas_frame = tk.Frame(right_frame, bg='#2C3E50')
+        self.canvas_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
     def load_image(self):
-        """Загрузка и анализ изображения"""
+        """Загрузить изображение"""
         file_path = filedialog.askopenfilename(
-            title="Выберите изображение",
-            filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp")]
+            filetypes=[("Image files", "*.jpg *.jpeg *.png"), ("All files", "*.*")]
         )
-        
-        if not file_path:
+
+        if file_path:
+            self.current_image_path = file_path
+
+            # Отображение изображения
+            image = Image.open(file_path)
+            image.thumbnail((250, 300))
+            photo = ImageTk.PhotoImage(image)
+            self.image_display.config(image=photo)
+            self.image_display.image = photo
+
+            # Предсказание
+            self.predict()
+
+    def predict(self):
+        """Получить предсказание от backend"""
+        if not self.current_image_path or not self.backend_connected:
+            messagebox.showerror("Ошибка", "Загрузите изображение и проверьте соединение")
             return
-        
-        # Предсказание
-        img, top5_classes, top5_probs = predict_image(file_path)
-        
-        if img is None:
-            return
-        
-        # Отображение изображения
-        img.thumbnail((500, 500))
-        from PIL import ImageTk
-        photo = ImageTk.PhotoImage(img)
-        self.image_label.configure(image=photo, text="")
-        self.image_label.image = photo
-        
-        # Визуализация результатов
-        self.display_results(top5_classes, top5_probs)
-    
-    def display_results(self, classes, probs):
-        """Отображение результатов"""
-        # График
-        self.ax.clear()
-        colors = ['#e74c3c' if probs[i] > 0.5 else '#3498db' for i in range(len(classes))]
-        bars = self.ax.barh(classes, probs * 100, color=colors)
-        self.ax.set_xlabel('Вероятность (%)', fontsize=12, fontweight='bold')
-        self.ax.set_title('Топ-5 Предсказаний', fontsize=14, fontweight='bold')
-        self.ax.set_xlim(0, 100)
-        
-        # Добавление процентов на графике
-        for i, (bar, prob) in enumerate(zip(bars, probs)):
-            self.ax.text(prob * 100 + 2, bar.get_y() + bar.get_height()/2, 
-                        f'{prob*100:.1f}%', va='center', fontsize=10, fontweight='bold')
-        
-        self.canvas.draw()
-        
-        # Текстовое описание
-        self.result_text.delete(1.0, tk.END)
-        
-        top_class = classes[0]
-        top_prob = probs[0]
-        
-        if top_class in CLASS_DESCRIPTIONS:
-            name, emoji, category = CLASS_DESCRIPTIONS[top_class]
-            self.result_text.insert(tk.END, f"🎯 ОСНОВНОЙ ДИАГНОЗ:\n", 'bold')
-            self.result_text.insert(tk.END, f"{emoji} {name} ({top_class})\n\n", 'result')
-            self.result_text.insert(tk.END, f"📊 Уверенность: {top_prob*100:.1f}%\n", 'prob')
-            self.result_text.insert(tk.END, f"🏷️ Категория: {category}\n\n", 'category')
-        else:
-            self.result_text.insert(tk.END, f"🎯 ОСНОВНОЙ ДИАГНОЗ: {top_class}\n", 'bold')
-            self.result_text.insert(tk.END, f"📊 Уверенность: {top_prob*100:.1f}%\n\n", 'prob')
-        
-        # Альтернативные диагнозы
-        self.result_text.insert(tk.END, "📋 АЛЬТЕРНАТИВНЫЕ ДИАГНОЗЫ:\n", 'bold')
-        for i in range(1, min(5, len(classes))):
-            cls = classes[i]
-            prob = probs[i]
-            if cls in CLASS_DESCRIPTIONS:
-                name, emoji, _ = CLASS_DESCRIPTIONS[cls]
-                self.result_text.insert(tk.END, f"{i}. {emoji} {name}: {prob*100:.1f}%\n")
+
+        try:
+            self.load_btn.config(state=tk.DISABLED, text="⏳ АНАЛИЗИРОВАНИЕ...")
+            self.root.update()
+
+            # Запрос к серверу
+            result = self.client.predict(self.current_image_path)
+
+            if 'data' in result:
+                data = result['data']
             else:
-                self.result_text.insert(tk.END, f"{i}. {cls}: {prob*100:.1f}%\n")
-        
-        # Настройка тегов
-        self.result_text.tag_config('bold', font=('Arial', 12, 'bold'))
-        self.result_text.tag_config('result', font=('Arial', 13, 'bold'), foreground='#2c3e50')
-        self.result_text.tag_config('prob', font=('Arial', 11), foreground='#3498db')
-        self.result_text.tag_config('category', font=('Arial', 11, 'bold'), foreground='#e74c3c')
+                data = result
 
-# ============================================================================
-# 🚀 ЗАПУСК
-# ============================================================================
+            # Основное предсказание
+            predicted_class = data.get('predicted_class', 'Unknown')
+            confidence = data.get('confidence', 0) * 100
 
-if __name__ == '__main__':
+            # Получить описание класса
+            desc_info = CLASS_DESCRIPTIONS.get(predicted_class, (predicted_class, '❓', 'Неизвестно'))
+            class_name, emoji, severity = desc_info
+
+            color = '#E74C3C' if data.get('is_malignant') else '#2ECC71'
+
+            pred_text = f"{emoji} {class_name}\nВероятность: {confidence:.1f}%\nТяжесть: {severity}"
+            self.pred_text.config(text=pred_text, fg=color)
+
+            # График вероятностей
+            self.draw_probabilities(data.get('top_predictions', []))
+
+        except ConnectionError as e:
+            messagebox.showerror("Ошибка подключения", f"Backend недоступен:\n{e}")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Ошибка при анализе:\n{e}")
+        finally:
+            self.load_btn.config(state=tk.NORMAL, text="📂 ЗАГРУЗИТЬ ИЗОБРАЖЕНИЕ")
+
+    def draw_probabilities(self, predictions):
+        """Нарисовать график вероятностей"""
+        for widget in self.canvas_frame.winfo_children():
+            widget.destroy()
+
+        if not predictions:
+            return
+
+        # Данные для графика
+        classes = []
+        probs = []
+
+        for pred in predictions[:10]:
+            class_name = pred.get('class_name', 'Unknown')
+            class_key = ''.join(c for c in class_name if c.isalpha()).upper()[:3]
+            classes.append(class_key)
+            probs.append(pred.get('confidence', 0) * 100)
+
+        # Создание графика
+        fig, ax = plt.subplots(figsize=(6, 4), dpi=80)
+        colors = ['#E74C3C' if p > 50 else '#F39C12' if p > 30 else '#2ECC71' for p in probs]
+        bars = ax.barh(classes, probs, color=colors)
+
+        ax.set_xlabel('Вероятность (%)', color='white')
+        ax.set_xlim(0, 100)
+        ax.set_facecolor('#2C3E50')
+        ax.tick_params(colors='white')
+
+        fig.patch.set_facecolor('#2C3E50')
+
+        # Встроить график в tkinter
+        canvas = FigureCanvasTkAgg(fig, master=self.canvas_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+if __name__ == "__main__":
     root = tk.Tk()
-    app = UniversalModelGUI(root)
+    app = UniversalSkinDiseaseApp(root)
     root.mainloop()
-
-
