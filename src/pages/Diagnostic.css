@@ -1,0 +1,252 @@
+.diagnostic {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.diagnostic-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Кнопка загрузки */
+.diagnostic-upload-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+}
+
+.diagnostic-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: var(--btn-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.diagnostic-upload-btn:hover {
+  background: var(--btn-primary-hover);
+}
+
+.diagnostic-upload-icon {
+  font-size: 1.5rem;
+}
+
+/* Результаты: два блока */
+.diagnostic-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .diagnostic-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diagnostic-block-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+/* Изображение */
+.diagnostic-image-block {
+  position: sticky;
+  top: 1rem;
+}
+
+.diagnostic-image-wrap {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diagnostic-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.diagnostic-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.diagnostic-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--btn-primary);
+  border-radius: 50%;
+  animation: diagnostic-spin 0.8s linear infinite;
+}
+
+@keyframes diagnostic-spin {
+  to { transform: rotate(360deg); }
+}
+
+.diagnostic-reset {
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--btn-primary);
+  background: none;
+  font-weight: 600;
+}
+
+.diagnostic-reset:hover {
+  text-decoration: underline;
+}
+
+/* Блок диагноза */
+.diagnostic-diagnosis-block {
+  padding-top: 0;
+}
+
+.diagnostic-main {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.diagnostic-main-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.diagnostic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.diagnostic-badge-malignant {
+  color: var(--danger);
+}
+
+.diagnostic-badge-benign {
+  color: var(--success);
+}
+
+.diagnostic-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.diagnostic-badge-malignant .diagnostic-badge-dot {
+  background: var(--danger);
+}
+
+.diagnostic-badge-benign .diagnostic-badge-dot {
+  background: var(--success);
+}
+
+.diagnostic-badge-check {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.diagnostic-confidence {
+  font-size: 0.875rem;
+  color: var(--btn-primary);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.diagnostic-description {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.diagnostic-top3-title {
+  margin-top: 0.5rem;
+}
+
+.diagnostic-top3 {
+  list-style: none;
+}
+
+.diagnostic-top3-item {
+  margin-bottom: 0.75rem;
+}
+
+.diagnostic-top3-label {
+  font-size: 0.875rem;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.diagnostic-top3-bar-wrap {
+  height: 8px;
+  background: #e8eef4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.diagnostic-top3-bar {
+  height: 100%;
+  background: var(--btn-primary);
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+.diagnostic-top3-bar-first {
+  background: var(--success);
+}
+
+/* Disclaimer */
+.diagnostic-disclaimer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--danger);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diagnostic-disclaimer-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
