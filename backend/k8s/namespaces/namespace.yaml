@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: skin-disease
+  labels:
+    app: skin-disease-ai
+    environment: production

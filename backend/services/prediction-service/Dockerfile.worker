@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install requirements
+COPY services/prediction-service/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy shared utilities
+COPY shared /app/shared
+
+# Copy application code
+COPY services/prediction-service/app /app/app
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
+USER appuser
+
+CMD ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]
