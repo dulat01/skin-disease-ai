@@ -3,481 +3,825 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 Skin Disease Diagnosis AI</title>
+    <title>Skin Disease Diagnosis AI</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .status {
-            text-align: center;
-            padding: 10px;
-            margin: 20px;
-            border-radius: 10px;
-            font-weight: bold;
-        }
-
-        .status.healthy {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            padding: 40px;
-        }
-
-        @media (max-width: 900px) {
-            .content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .section {
+        /* ===================== NAV ===================== */
+        .navbar {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 12px 30px;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
+        .navbar-brand { color: white; font-size: 1.3em; font-weight: bold; }
+        .navbar-actions { display: flex; align-items: center; gap: 12px; }
+        .nav-btn {
+            padding: 7px 16px; border: none; border-radius: 6px;
+            font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .nav-btn-outline {
+            background: transparent; border: 2px solid rgba(255,255,255,0.7); color: white;
+        }
+        .nav-btn-outline:hover { background: rgba(255,255,255,0.2); }
+        .nav-btn-solid { background: white; color: #667eea; }
+        .nav-btn-solid:hover { background: #f0f0ff; }
+        .nav-user { color: rgba(255,255,255,0.9); font-size: 0.9em; font-weight: 500; }
+        .nav-tab {
+            padding: 7px 16px; border: none; background: transparent;
+            color: rgba(255,255,255,0.8); font-size: 0.9em; cursor: pointer;
+            border-radius: 6px; transition: all 0.2s; font-weight: 500;
+        }
+        .nav-tab:hover, .nav-tab.active { background: rgba(255,255,255,0.2); color: white; }
+        #navAuth { display: flex; gap: 8px; }
+        #navUser { display: none; align-items: center; gap: 12px; }
 
-        .section h2 {
-            color: #333;
-            font-size: 1.5em;
-            margin-bottom: 10px;
+        /* ===================== AUTH SECTION ===================== */
+        #authSection {
+            display: flex; align-items: center; justify-content: center;
+            min-height: calc(100vh - 57px); padding: 40px 20px;
         }
+        .auth-card {
+            background: white; border-radius: 16px; padding: 40px;
+            width: 100%; max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .auth-card h2 { color: #333; margin-bottom: 8px; font-size: 1.6em; }
+        .auth-card p { color: #888; margin-bottom: 28px; font-size: 0.95em; }
+        .auth-tabs { display: flex; gap: 0; margin-bottom: 28px; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; }
+        .auth-tab {
+            flex: 1; padding: 10px; border: none; background: white;
+            color: #888; font-size: 0.95em; cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .auth-tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; color: #555; font-size: 0.9em; font-weight: 600; margin-bottom: 6px; }
+        .form-input {
+            width: 100%; padding: 10px 14px; border: 1.5px solid #e0e0e0;
+            border-radius: 8px; font-size: 0.95em; transition: border-color 0.2s; outline: none;
+        }
+        .form-input:focus { border-color: #667eea; }
+        .btn-submit {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; font-size: 1em; font-weight: 700; cursor: pointer;
+            margin-top: 8px; transition: opacity 0.2s;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .auth-error { color: #c0392b; font-size: 0.88em; margin-top: 10px; display: none; }
+        .auth-success { color: #27ae60; font-size: 0.88em; margin-top: 10px; display: none; }
+        .skip-auth {
+            width: 100%; padding: 10px; border: 1.5px dashed #ccc; border-radius: 8px;
+            background: #fafafa; color: #888; font-size: 0.9em; cursor: pointer; margin-top: 12px;
+            transition: all 0.2s;
+        }
+        .skip-auth:hover { border-color: #667eea; color: #667eea; background: #f0f0ff; }
+
+        /* ===================== MAIN APP ===================== */
+        #appSection { display: none; padding: 30px 20px; }
+        .app-container {
+            max-width: 1200px; margin: 0 auto; background: white;
+            border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+        }
+        .app-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; padding: 32px 40px; text-align: center;
+        }
+        .app-header h1 { font-size: 2.2em; margin-bottom: 8px; }
+        .app-header p { opacity: 0.85; font-size: 1em; }
+
+        .status-bar {
+            text-align: center; padding: 10px 20px; font-weight: 600; font-size: 0.9em;
+            margin: 16px 20px; border-radius: 8px;
+        }
+        .status-bar.healthy { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-bar.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* App tabs */
+        .app-tabs { display: flex; border-bottom: 2px solid #f0f0f0; padding: 0 30px; }
+        .app-tab {
+            padding: 14px 20px; border: none; background: none; color: #888;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+            margin-bottom: -2px; transition: all 0.2s;
+        }
+        .app-tab.active { color: #667eea; border-bottom-color: #667eea; }
+        .app-tab:hover { color: #667eea; }
+
+        .tab-panel { display: none; padding: 30px; }
+        .tab-panel.active { display: block; }
+
+        /* ===================== PREDICT TAB ===================== */
+        .predict-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
+        }
+        @media (max-width: 800px) { .predict-grid { grid-template-columns: 1fr; } }
+
+        .section-title { color: #333; font-size: 1.3em; font-weight: 700; margin-bottom: 16px; }
 
         .upload-box {
-            border: 3px dashed #667eea;
-            border-radius: 10px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #f8f9ff;
+            border: 3px dashed #667eea; border-radius: 12px; padding: 36px 20px;
+            text-align: center; cursor: pointer; transition: all 0.3s; background: #f8f9ff;
         }
-
-        .upload-box:hover {
-            border-color: #764ba2;
-            background: #f0f2ff;
+        .upload-box:hover, .upload-box.dragover {
+            border-color: #764ba2; background: #f0f2ff; transform: scale(1.01);
         }
+        .upload-icon { font-size: 2.5em; margin-bottom: 10px; }
+        .upload-box p { color: #667eea; font-weight: 600; margin-bottom: 4px; }
+        .upload-box small { color: #aaa; font-size: 0.82em; }
+        #imageInput { display: none; }
+        #imagePreview { max-width: 100%; max-height: 280px; border-radius: 10px; margin-top: 16px; display: none; }
 
-        .upload-box.dragover {
-            border-color: #764ba2;
-            background: #e8ebff;
-            transform: scale(1.02);
+        .btn-predict {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; font-size: 1em; font-weight: 700; cursor: pointer;
+            margin-top: 12px; transition: all 0.2s;
         }
+        .btn-predict:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .btn-predict:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        #imageInput {
-            display: none;
-        }
+        .error-box { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-top: 10px; display: none; font-size: 0.9em; }
+        .error-box.show { display: block; }
 
-        #imagePreview {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .button-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .button-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .button-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .results-box {
-            background: #f8f9ff;
-            border-radius: 10px;
-            padding: 20px;
-            display: none;
-        }
-
-        .results-box.show {
-            display: block;
-        }
-
-        .main-result {
-            background: white;
-            border-left: 5px solid #667eea;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .result-class {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .result-confidence {
-            font-size: 1.2em;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .malignant-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .malignant {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .benign {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .confidence-bar {
-            width: 100%;
-            height: 10px;
-            background: #e0e0e0;
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .top-predictions {
-            margin-top: 20px;
-        }
-
-        .top-predictions h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
-
-        .prediction-item {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .prediction-item-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .prediction-item-conf {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            display: none;
-        }
-
+        /* Results */
+        .loading { text-align: center; padding: 30px; display: none; }
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
+            border: 4px solid #f3f3f3; border-top: 4px solid #667eea;
+            border-radius: 50%; width: 44px; height: 44px;
+            animation: spin 0.8s linear infinite; margin: 0 auto 12px;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        .results-box { background: #f8f9ff; border-radius: 12px; padding: 20px; display: none; }
+        .results-box.show { display: block; }
 
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
+        .main-result { background: white; border-left: 5px solid #667eea; padding: 18px; border-radius: 8px; margin-bottom: 16px; }
+        .result-class { font-size: 1.6em; font-weight: 700; color: #333; margin-bottom: 8px; }
+        .result-confidence { color: #666; margin-bottom: 8px; }
+        .confidence-bar { height: 8px; background: #e8e8e8; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+        .confidence-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.5s; }
+        .badge {
+            display: inline-block; padding: 6px 14px; border-radius: 20px;
+            font-weight: 700; font-size: 0.88em; margin-top: 8px;
         }
+        .badge-malignant { background: #f8d7da; color: #721c24; }
+        .badge-benign { background: #d4edda; color: #155724; }
 
-        .error-message.show {
-            display: block;
+        .top-preds h3 { color: #555; font-size: 1em; margin-bottom: 10px; }
+        .pred-item { background: white; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #667eea; }
+        .pred-item-name { font-weight: 600; color: #333; font-size: 0.92em; }
+        .pred-item-conf { color: #888; font-size: 0.85em; margin-top: 2px; }
+
+        /* Feedback */
+        .feedback-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e8e8e8; }
+        .feedback-section h4 { color: #555; font-size: 0.95em; margin-bottom: 10px; }
+        .feedback-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .fb-btn {
+            padding: 7px 14px; border: 1.5px solid #e0e0e0; border-radius: 6px;
+            background: white; color: #555; font-size: 0.85em; cursor: pointer; transition: all 0.2s;
         }
+        .fb-btn:hover { border-color: #667eea; color: #667eea; }
+        .fb-btn.selected { background: #667eea; color: white; border-color: #667eea; }
+        .feedback-comment { width: 100%; margin-top: 10px; padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 0.88em; resize: vertical; min-height: 60px; display: none; }
+        .feedback-comment.show { display: block; }
+        .btn-submit-fb {
+            margin-top: 8px; padding: 8px 18px; border: none; border-radius: 6px;
+            background: #667eea; color: white; font-size: 0.88em; font-weight: 600;
+            cursor: pointer; display: none;
+        }
+        .btn-submit-fb.show { display: inline-block; }
+        .feedback-done { color: #27ae60; font-size: 0.88em; margin-top: 8px; display: none; }
+
+        /* ===================== HISTORY TAB ===================== */
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-refresh {
+            padding: 7px 16px; border: 1.5px solid #667eea; border-radius: 6px;
+            background: white; color: #667eea; font-size: 0.88em; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-refresh:hover { background: #667eea; color: white; }
+
+        .history-list { display: flex; flex-direction: column; gap: 12px; }
+        .history-item {
+            background: #f8f9ff; border: 1px solid #e8e8f0; border-radius: 10px;
+            padding: 16px; display: flex; justify-content: space-between; align-items: flex-start;
+            transition: border-color 0.2s;
+        }
+        .history-item:hover { border-color: #667eea; }
+        .history-item-info { flex: 1; }
+        .history-item-class { font-weight: 700; color: #333; font-size: 1em; margin-bottom: 4px; }
+        .history-item-meta { color: #888; font-size: 0.83em; }
+        .history-item-right { text-align: right; }
+        .history-badge { font-size: 0.78em; padding: 3px 10px; border-radius: 10px; font-weight: 600; display: inline-block; }
+        .history-empty { text-align: center; color: #aaa; padding: 60px 20px; font-size: 0.95em; }
+        .history-loading { text-align: center; padding: 40px; color: #888; }
+
+        .auth-required-msg {
+            text-align: center; padding: 60px 20px; color: #888;
+        }
+        .auth-required-msg a { color: #667eea; cursor: pointer; text-decoration: underline; }
+
+        /* ===================== MODAL ===================== */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: 16px; padding: 32px; width: 90%; max-width: 440px; }
+        .modal h3 { margin-bottom: 16px; color: #333; }
+        .modal-close { float: right; background: none; border: none; font-size: 1.4em; cursor: pointer; color: #888; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔬 Skin Disease Diagnosis AI</h1>
-            <p>ResNet18 Model | 77.10% Accuracy | CAS_ISIC Dataset</p>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-brand">🔬 Skin Disease AI</div>
+    <div class="navbar-actions">
+        <div id="navAuth">
+            <button class="nav-btn nav-btn-outline" onclick="showAuth('login')">Login</button>
+            <button class="nav-btn nav-btn-solid" onclick="showAuth('register')">Register</button>
+        </div>
+        <div id="navUser">
+            <button class="nav-tab" id="navTabPredict" onclick="showAppTab('predict')">Diagnose</button>
+            <button class="nav-tab" id="navTabHistory" onclick="showAppTab('history')">History</button>
+            <span class="nav-user" id="navUserName"></span>
+            <button class="nav-btn nav-btn-outline" onclick="doLogout()">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<!-- =================== AUTH SECTION =================== -->
+<div id="authSection">
+    <div class="auth-card">
+        <h2>Welcome Back</h2>
+        <p>Sign in to track your diagnoses and view history</p>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Login</button>
+            <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Register</button>
         </div>
 
-        <div id="statusBar" class="status healthy">
-            ✅ Backend Connected
+        <!-- Login Form -->
+        <div id="loginForm">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" class="form-input" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" class="form-input" placeholder="Your password">
+            </div>
+            <button class="btn-submit" id="loginBtn" onclick="doLogin()">Sign In</button>
+            <div class="auth-error" id="loginError"></div>
         </div>
 
-        <div class="content">
-            <!-- Upload Section -->
-            <div class="section">
-                <h2>📂 Upload Image</h2>
-                <div class="upload-box" id="uploadBox">
-                    <div style="font-size: 2em; margin-bottom: 10px;">📤</div>
-                    <p style="font-weight: bold; color: #667eea;">Drag & drop image here</p>
-                    <p style="color: #999; font-size: 0.9em;">or click to select</p>
-                    <p style="color: #999; font-size: 0.8em; margin-top: 10px;">Supported: JPEG, PNG (Max 10MB)</p>
-                    <input type="file" id="imageInput" accept="image/*">
+        <!-- Register Form -->
+        <div id="registerForm" style="display:none">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="regName" class="form-input" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="regEmail" class="form-input" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="regPassword" class="form-input" placeholder="Min 8 chars, uppercase + digit">
+            </div>
+            <button class="btn-submit" id="registerBtn" onclick="doRegister()">Create Account</button>
+            <div class="auth-error" id="registerError"></div>
+            <div class="auth-success" id="registerSuccess"></div>
+        </div>
+
+        <button class="skip-auth" onclick="skipToApp()">Continue without account (anonymous mode)</button>
+    </div>
+</div>
+
+<!-- =================== APP SECTION =================== -->
+<div id="appSection">
+    <div class="app-container">
+        <div class="app-header">
+            <h1>Skin Disease Diagnosis AI</h1>
+            <p>ResNet18 Model &bull; 77.10% Accuracy &bull; CAS_ISIC Dataset</p>
+        </div>
+
+        <div id="statusBar" class="status-bar healthy">Backend Connected</div>
+
+        <div class="app-tabs">
+            <button class="app-tab active" id="appTabPredict" onclick="switchAppTab('predict')">Diagnose Image</button>
+            <button class="app-tab" id="appTabHistory" onclick="switchAppTab('history')">My History</button>
+        </div>
+
+        <!-- PREDICT TAB -->
+        <div id="panelPredict" class="tab-panel active">
+            <div class="predict-grid">
+                <!-- Upload -->
+                <div>
+                    <div class="section-title">Upload Image</div>
+                    <div class="upload-box" id="uploadBox">
+                        <div class="upload-icon">📤</div>
+                        <p>Drag & drop or click to select</p>
+                        <small>JPEG, PNG — max 10MB</small>
+                        <input type="file" id="imageInput" accept="image/*">
+                    </div>
+                    <img id="imagePreview" alt="Preview">
+                    <button class="btn-predict" id="predictBtn" disabled onclick="doPrediction()">Analyze Image</button>
+                    <div class="error-box" id="errorBox"></div>
                 </div>
-                <img id="imagePreview" alt="Preview">
-                <button class="button button-primary" id="predictBtn" disabled>🔍 Analyze Image</button>
-                <div class="error-message" id="errorMessage"></div>
+
+                <!-- Results -->
+                <div>
+                    <div class="section-title">Diagnosis Results</div>
+
+                    <div class="loading" id="loadingSpinner">
+                        <div class="spinner"></div>
+                        <p style="color:#888">Analyzing image...</p>
+                    </div>
+
+                    <div class="results-box" id="resultsBox">
+                        <div class="main-result">
+                            <div class="result-class" id="resultClass">—</div>
+                            <div class="result-confidence">Confidence: <strong id="resultConf">0%</strong></div>
+                            <div class="confidence-bar"><div class="confidence-fill" id="confFill"></div></div>
+                            <div class="badge" id="resultBadge">—</div>
+                        </div>
+
+                        <div class="top-preds">
+                            <h3>Top Predictions</h3>
+                            <div id="topPredsList"></div>
+                        </div>
+
+                        <!-- Feedback (authenticated users only) -->
+                        <div class="feedback-section" id="feedbackSection" style="display:none">
+                            <h4>Was this diagnosis correct?</h4>
+                            <div class="feedback-btns">
+                                <button class="fb-btn" id="fbCorrect" onclick="selectFeedback(true)">Yes, correct</button>
+                                <button class="fb-btn" id="fbWrong" onclick="selectFeedback(false)">No, incorrect</button>
+                            </div>
+                            <textarea class="feedback-comment" id="fbComment" placeholder="Optional: add a comment..."></textarea>
+                            <button class="btn-submit-fb" id="fbSubmitBtn" onclick="submitFeedback()">Submit Feedback</button>
+                            <div class="feedback-done" id="fbDone">Thank you for your feedback!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="panelHistory" class="tab-panel">
+            <div id="historyAuthRequired" class="auth-required-msg" style="display:none">
+                <p style="font-size:1.1em; margin-bottom:8px">Sign in to view your prediction history</p>
+                <p><a onclick="goToLogin()">Login</a> or <a onclick="goToRegister()">Register</a> to save and track your diagnoses</p>
             </div>
 
-            <!-- Results Section -->
-            <div class="section">
-                <h2>📊 Diagnosis Results</h2>
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 15px; color: #666;">Analyzing image...</p>
+            <div id="historyContent" style="display:none">
+                <div class="history-header">
+                    <div class="section-title" style="margin-bottom:0">Diagnosis History</div>
+                    <button class="btn-refresh" onclick="loadHistory()">Refresh</button>
                 </div>
-
-                <div class="results-box" id="resultsBox">
-                    <div class="main-result">
-                        <div class="result-class" id="resultClass">—</div>
-                        <div class="result-confidence">
-                            Confidence: <span id="resultConfidence">0%</span>
-                        </div>
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" id="confidenceFill"></div>
-                        </div>
-                        <div class="malignant-badge" id="resultBadge">—</div>
-                    </div>
-
-                    <div class="top-predictions">
-                        <h3>🏆 Top Predictions</h3>
-                        <div id="topPredictionsList"></div>
-                    </div>
+                <div id="historyLoading" class="history-loading" style="display:none">Loading...</div>
+                <div class="history-list" id="historyList"></div>
+                <div id="historyEmpty" class="history-empty" style="display:none">
+                    No diagnoses yet. Upload an image to get started.
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const uploadBox = document.getElementById('uploadBox');
-        const imageInput = document.getElementById('imageInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const predictBtn = document.getElementById('predictBtn');
-        const resultsBox = document.getElementById('resultsBox');
-        const loading = document.getElementById('loading');
-        const errorMessage = document.getElementById('errorMessage');
-        const statusBar = document.getElementById('statusBar');
-        let selectedFile = null;
+<script>
+// =====================================================================
+// STATE
+// =====================================================================
+let currentUser = null;
+let currentPredictionId = null;
+let feedbackIsCorrect = null;
+let selectedFile = null;
 
-        // Check backend health on load
-        checkBackendHealth();
+// =====================================================================
+// INIT
+// =====================================================================
+window.addEventListener('DOMContentLoaded', async () => {
+    checkBackendHealth();
+    setInterval(checkBackendHealth, 15000);
 
-        // Drag & drop
-        uploadBox.addEventListener('click', () => imageInput.click());
-        uploadBox.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadBox.classList.add('dragover');
-        });
-        uploadBox.addEventListener('dragleave', () => {
-            uploadBox.classList.remove('dragover');
-        });
-        uploadBox.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadBox.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleImageSelect(files[0]);
-            }
-        });
+    // Check if already authenticated (session on server)
+    await checkSession();
+});
 
-        // File input change
-        imageInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleImageSelect(e.target.files[0]);
-            }
-        });
-
-        function handleImageSelect(file) {
-            selectedFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagePreview.src = e.target.result;
-                imagePreview.style.display = 'block';
-                predictBtn.disabled = false;
-                resultsBox.classList.remove('show');
-                errorMessage.classList.remove('show');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // Predict button
-        predictBtn.addEventListener('click', predict);
-
-        async function predict() {
-            if (!selectedFile) return;
-
-            predictBtn.disabled = true;
-            loading.style.display = 'block';
-            resultsBox.classList.remove('show');
-            errorMessage.classList.remove('show');
-
-            const formData = new FormData();
-            formData.append('image', selectedFile);
-
-            try {
-                const response = await fetch('/api/predict', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    displayResults(data.data || data);
-                } else {
-                    showError(data.error || 'Prediction failed');
-                }
-            } catch (error) {
-                showError('Error: ' + error.message);
-            } finally {
-                loading.style.display = 'none';
-                predictBtn.disabled = false;
+async function checkSession() {
+    try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+                currentUser = data.data;
+                enterApp();
+                return;
             }
         }
+    } catch (e) {}
+    // Not logged in - show auth page
+    showAuthSection();
+}
 
-        function displayResults(result) {
-            const confidence = (result.confidence * 100).toFixed(1);
-            const isMalignant = result.is_malignant;
+// =====================================================================
+// AUTH SECTION
+// =====================================================================
+function showAuthSection() {
+    document.getElementById('authSection').style.display = 'flex';
+    document.getElementById('appSection').style.display = 'none';
+    document.getElementById('navAuth').style.display = 'flex';
+    document.getElementById('navUser').style.display = 'none';
+}
 
-            document.getElementById('resultClass').textContent = result.predicted_class;
-            document.getElementById('resultConfidence').textContent = confidence + '%';
-            document.getElementById('confidenceFill').style.width = confidence + '%';
+function showAuth(tab) {
+    showAuthSection();
+    switchAuthTab(tab);
+    window.scrollTo(0, 0);
+}
 
-            const badge = document.getElementById('resultBadge');
-            if (isMalignant) {
-                badge.textContent = '🔴 MALIGNANT - SEEK MEDICAL HELP';
-                badge.className = 'malignant-badge malignant';
-            } else {
-                badge.textContent = '🟢 BENIGN - LOW RISK';
-                badge.className = 'malignant-badge benign';
-            }
+function switchAuthTab(tab) {
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+}
 
-            // Top predictions
-            const topList = document.getElementById('topPredictionsList');
-            topList.innerHTML = '';
-            (result.top_predictions || []).forEach((pred, i) => {
-                const conf = (pred.confidence * 100).toFixed(1);
-                const emoji = pred.is_malignant ? '🔴' : '🟢';
-                topList.innerHTML += `
-                    <div class="prediction-item">
-                        <div class="prediction-item-name">${i + 1}. ${emoji} ${pred.class_name}</div>
-                        <div class="prediction-item-conf">Confidence: ${conf}%</div>
+function goToLogin() { showAuth('login'); }
+function goToRegister() { showAuth('register'); }
+
+async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+
+    if (!email || !password) { showAuthError('loginError', 'Please fill in all fields'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    errEl.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            currentUser = data.data.user;
+            enterApp();
+        } else {
+            showAuthError('loginError', data.detail || data.error || 'Login failed');
+        }
+    } catch (e) {
+        showAuthError('loginError', 'Connection error. Check if backend is running.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+    }
+}
+
+async function doRegister() {
+    const full_name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const btn = document.getElementById('registerBtn');
+
+    if (!full_name || !email || !password) { showAuthError('registerError', 'Please fill in all fields'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+    document.getElementById('registerError').style.display = 'none';
+    document.getElementById('registerSuccess').style.display = 'none';
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({full_name, email, password})
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            document.getElementById('registerSuccess').textContent = 'Account created! You can now log in.';
+            document.getElementById('registerSuccess').style.display = 'block';
+            setTimeout(() => switchAuthTab('login'), 1500);
+        } else {
+            const msg = data.detail || data.error || 'Registration failed';
+            showAuthError('registerError', typeof msg === 'object' ? JSON.stringify(msg) : msg);
+        }
+    } catch (e) {
+        showAuthError('registerError', 'Connection error. Check if backend is running.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+    }
+}
+
+function skipToApp() {
+    currentUser = null;
+    enterApp();
+}
+
+function showAuthError(elId, msg) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+// =====================================================================
+// APP SECTION
+// =====================================================================
+function enterApp() {
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('appSection').style.display = 'block';
+    document.getElementById('navAuth').style.display = 'none';
+    document.getElementById('navUser').style.display = 'flex';
+
+    if (currentUser) {
+        document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.email;
+    } else {
+        document.getElementById('navUserName').textContent = 'Anonymous';
+    }
+
+    switchAppTab('predict');
+}
+
+function showAppTab(tab) {
+    switchAppTab(tab);
+}
+
+function switchAppTab(tab) {
+    document.getElementById('panelPredict').classList.toggle('active', tab === 'predict');
+    document.getElementById('panelHistory').classList.toggle('active', tab === 'history');
+    document.getElementById('appTabPredict').classList.toggle('active', tab === 'predict');
+    document.getElementById('appTabHistory').classList.toggle('active', tab === 'history');
+    document.getElementById('navTabPredict').classList.toggle('active', tab === 'predict');
+    document.getElementById('navTabHistory').classList.toggle('active', tab === 'history');
+
+    if (tab === 'history') {
+        if (!currentUser) {
+            document.getElementById('historyAuthRequired').style.display = 'block';
+            document.getElementById('historyContent').style.display = 'none';
+        } else {
+            document.getElementById('historyAuthRequired').style.display = 'none';
+            document.getElementById('historyContent').style.display = 'block';
+            loadHistory();
+        }
+    }
+}
+
+async function doLogout() {
+    try {
+        await fetch('/api/auth/logout', {method: 'POST'});
+    } catch (e) {}
+    currentUser = null;
+    showAuthSection();
+}
+
+// =====================================================================
+// PREDICTION
+// =====================================================================
+const uploadBox = document.getElementById('uploadBox');
+const imageInput = document.getElementById('imageInput');
+
+uploadBox.addEventListener('click', () => imageInput.click());
+uploadBox.addEventListener('dragover', e => { e.preventDefault(); uploadBox.classList.add('dragover'); });
+uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragover'));
+uploadBox.addEventListener('drop', e => {
+    e.preventDefault(); uploadBox.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+});
+imageInput.addEventListener('change', e => { if (e.target.files.length > 0) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('imagePreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.getElementById('predictBtn').disabled = false;
+        document.getElementById('resultsBox').classList.remove('show');
+        document.getElementById('errorBox').classList.remove('show');
+    };
+    reader.readAsDataURL(file);
+}
+
+async function doPrediction() {
+    if (!selectedFile) return;
+
+    document.getElementById('predictBtn').disabled = true;
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('resultsBox').classList.remove('show');
+    document.getElementById('errorBox').classList.remove('show');
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+        const res = await fetch('/api/predict', {method: 'POST', body: formData});
+        const data = await res.json();
+
+        if (res.ok) {
+            const result = data.data || data;
+            currentPredictionId = result.id || null;
+            displayResults(result);
+        } else {
+            showPredError(data.error || 'Prediction failed');
+        }
+    } catch (e) {
+        showPredError('Network error: ' + e.message);
+    } finally {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        document.getElementById('predictBtn').disabled = false;
+    }
+}
+
+function displayResults(result) {
+    const conf = (result.confidence * 100).toFixed(1);
+    document.getElementById('resultClass').textContent = result.predicted_class || 'Unknown';
+    document.getElementById('resultConf').textContent = conf + '%';
+    document.getElementById('confFill').style.width = conf + '%';
+
+    const badge = document.getElementById('resultBadge');
+    if (result.is_malignant) {
+        badge.textContent = 'MALIGNANT — Seek Medical Help';
+        badge.className = 'badge badge-malignant';
+    } else {
+        badge.textContent = 'BENIGN — Low Risk';
+        badge.className = 'badge badge-benign';
+    }
+
+    const list = document.getElementById('topPredsList');
+    list.innerHTML = '';
+    (result.top_predictions || []).forEach((p, i) => {
+        const c = (p.confidence * 100).toFixed(1);
+        const icon = p.is_malignant ? '🔴' : '🟢';
+        list.innerHTML += `
+            <div class="pred-item">
+                <div class="pred-item-name">${i+1}. ${icon} ${p.class_name}</div>
+                <div class="pred-item-conf">Confidence: ${c}%</div>
+            </div>`;
+    });
+
+    // Show feedback section only for authenticated users
+    const fbSection = document.getElementById('feedbackSection');
+    if (currentUser && currentPredictionId) {
+        fbSection.style.display = 'block';
+        resetFeedback();
+    } else {
+        fbSection.style.display = 'none';
+    }
+
+    document.getElementById('resultsBox').classList.add('show');
+}
+
+function showPredError(msg) {
+    const el = document.getElementById('errorBox');
+    el.textContent = msg;
+    el.classList.add('show');
+}
+
+// =====================================================================
+// FEEDBACK
+// =====================================================================
+function resetFeedback() {
+    feedbackIsCorrect = null;
+    document.getElementById('fbCorrect').classList.remove('selected');
+    document.getElementById('fbWrong').classList.remove('selected');
+    document.getElementById('fbComment').classList.remove('show');
+    document.getElementById('fbSubmitBtn').classList.remove('show');
+    document.getElementById('fbDone').style.display = 'none';
+}
+
+function selectFeedback(isCorrect) {
+    feedbackIsCorrect = isCorrect;
+    document.getElementById('fbCorrect').classList.toggle('selected', isCorrect);
+    document.getElementById('fbWrong').classList.toggle('selected', !isCorrect);
+    document.getElementById('fbComment').classList.add('show');
+    document.getElementById('fbSubmitBtn').classList.add('show');
+}
+
+async function submitFeedback() {
+    if (feedbackIsCorrect === null || !currentPredictionId) return;
+
+    const comment = document.getElementById('fbComment').value.trim();
+    document.getElementById('fbSubmitBtn').disabled = true;
+
+    try {
+        const res = await fetch(`/api/predictions/${currentPredictionId}/feedback`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                is_correct: feedbackIsCorrect,
+                comment: comment || null
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            document.getElementById('fbDone').style.display = 'block';
+            document.getElementById('fbSubmitBtn').style.display = 'none';
+        }
+    } catch (e) {}
+    finally {
+        document.getElementById('fbSubmitBtn').disabled = false;
+    }
+}
+
+// =====================================================================
+// HISTORY
+// =====================================================================
+async function loadHistory() {
+    if (!currentUser) return;
+
+    const list = document.getElementById('historyList');
+    const empty = document.getElementById('historyEmpty');
+    const loading = document.getElementById('historyLoading');
+
+    list.innerHTML = '';
+    empty.style.display = 'none';
+    loading.style.display = 'block';
+
+    try {
+        const res = await fetch('/api/predictions/history?page=1&page_size=50');
+        const data = await res.json();
+        loading.style.display = 'none';
+
+        if (!res.ok || !data.success) {
+            list.innerHTML = '<div class="history-empty">Failed to load history.</div>';
+            return;
+        }
+
+        const items = data.data.items || [];
+        if (items.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+
+        items.forEach(item => {
+            const conf = item.confidence ? (item.confidence * 100).toFixed(1) + '%' : '—';
+            const date = item.created_at ? new Date(item.created_at).toLocaleDateString() : '—';
+            const badgeClass = item.is_malignant ? 'badge-malignant' : 'badge-benign';
+            const badgeText = item.is_malignant ? 'Malignant' : 'Benign';
+            const icon = item.is_malignant ? '🔴' : '🟢';
+
+            list.innerHTML += `
+                <div class="history-item">
+                    <div class="history-item-info">
+                        <div class="history-item-class">${icon} ${item.predicted_class || 'Unknown'}</div>
+                        <div class="history-item-meta">${item.original_filename || ''} &bull; ${date}</div>
                     </div>
-                `;
-            });
+                    <div class="history-item-right">
+                        <div class="history-badge ${badgeClass}">${badgeText}</div>
+                        <div style="color:#888;font-size:0.8em;margin-top:4px">${conf}</div>
+                    </div>
+                </div>`;
+        });
 
-            resultsBox.classList.add('show');
+    } catch (e) {
+        loading.style.display = 'none';
+        list.innerHTML = '<div class="history-empty">Error loading history.</div>';
+    }
+}
+
+// =====================================================================
+// HEALTH
+// =====================================================================
+async function checkBackendHealth() {
+    const bar = document.getElementById('statusBar');
+    if (!bar) return;
+    try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        if (data.status === 'healthy') {
+            bar.textContent = 'Backend Connected';
+            bar.className = 'status-bar healthy';
+        } else {
+            bar.textContent = 'Backend Degraded';
+            bar.className = 'status-bar error';
         }
-
-        function showError(message) {
-            errorMessage.textContent = '❌ ' + message;
-            errorMessage.classList.add('show');
-        }
-
-        async function checkBackendHealth() {
-            try {
-                const response = await fetch('/api/health');
-                const data = await response.json();
-                if (data.status === 'healthy') {
-                    statusBar.textContent = '✅ Backend Connected';
-                    statusBar.className = 'status healthy';
-                } else {
-                    statusBar.textContent = '⚠️ Backend Error';
-                    statusBar.className = 'status error';
-                }
-            } catch (error) {
-                statusBar.textContent = '❌ Backend Unavailable';
-                statusBar.className = 'status error';
-            }
-        }
-
-        // Check health every 10 seconds
-        setInterval(checkBackendHealth, 10000);
-    </script>
+    } catch (e) {
+        bar.textContent = 'Backend Unavailable';
+        bar.className = 'status-bar error';
+    }
+}
+</script>
 </body>
 </html>

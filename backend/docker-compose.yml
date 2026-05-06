@@ -10,9 +10,13 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - API_GATEWAY_URL=http://api-gateway:8000
       - PREDICTION_SERVICE_URL=http://prediction-service:8002
+      - SECRET_KEY=${FLASK_SECRET_KEY:-skin-disease-flask-secret-change-in-prod}
     depends_on:
       prediction-service:
+        condition: service_started
+      api-gateway:
         condition: service_started
     networks:
       - skin-disease-network
