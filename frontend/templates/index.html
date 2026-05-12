@@ -251,10 +251,13 @@
         <div id="navAuth">
             <button class="nav-btn nav-btn-outline" onclick="showAuth('login')">Login</button>
             <button class="nav-btn nav-btn-solid" onclick="showAuth('register')">Register</button>
+            <button class="nav-btn nav-btn-outline" onclick="showSubscription()">Get Subscription</button>
+            <button class="nav-btn nav-btn-outline" onclick="showDoctorLogin()">Doctor Login</button>
         </div>
         <div id="navUser">
             <button class="nav-tab" id="navTabPredict" onclick="showAppTab('predict')">Diagnose</button>
             <button class="nav-tab" id="navTabHistory" onclick="showAppTab('history')">History</button>
+            <button class="nav-tab" id="navTabProfile" onclick="showAppTab('profile')">Profile</button>
             <span class="nav-user" id="navUserName"></span>
             <button class="nav-btn nav-btn-outline" onclick="doLogout()">Logout</button>
         </div>
@@ -309,6 +312,79 @@
     </div>
 </div>
 
+<!-- =================== SUBSCRIPTION SECTION =================== -->
+<div id="subscriptionSection" style="display:none; flex: 1; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="auth-card" style="max-width: 500px;">
+        <h2>Get Subscription</h2>
+        <p>Get professional doctor verification for your diagnoses</p>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label>Select Plan:</label>
+            <div id="plansList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Contact Information (for us to reach you):</label>
+            <input type="email" id="subEmail" class="form-input" placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+            <label>Additional Notes (optional):</label>
+            <textarea id="subNotes" class="form-input" style="min-height: 80px;" placeholder="Any special requirements..."></textarea>
+        </div>
+
+        <button class="btn-submit" onclick="submitSubscriptionRequest()">Request Subscription</button>
+        <div class="auth-error" id="subError" style="margin-top:12px"></div>
+        <div class="auth-success" id="subSuccess" style="margin-top:12px"></div>
+
+        <button class="skip-auth" onclick="showAuth('login')">← Back to Login</button>
+    </div>
+</div>
+
+<!-- =================== DOCTOR LOGIN SECTION =================== -->
+<div id="doctorLoginSection" style="display:none; flex: 1; align-items: center; justify-content: center; padding: 40px 20px;">
+    <div class="auth-card" style="max-width: 500px;">
+        <h2>Doctor Registration</h2>
+        <p>Register as a doctor to approve diagnoses</p>
+
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="docName" class="form-input" placeholder="Dr. John Doe">
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="docEmail" class="form-input" placeholder="doctor@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>License Number</label>
+            <input type="text" id="docLicense" class="form-input" placeholder="License number">
+        </div>
+
+        <div class="form-group">
+            <label>Specialization</label>
+            <input type="text" id="docSpecialization" class="form-input" placeholder="e.g., Dermatology">
+        </div>
+
+        <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="docPhone" class="form-input" placeholder="Phone number">
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="docPassword" class="form-input" placeholder="Min 8 chars, uppercase + digit">
+        </div>
+
+        <button class="btn-submit" onclick="registerDoctor()">Register as Doctor</button>
+        <div class="auth-error" id="docError" style="margin-top:12px"></div>
+        <div class="auth-success" id="docSuccess" style="margin-top:12px"></div>
+
+        <button class="skip-auth" onclick="showAuth('login')">← Back to Login</button>
+    </div>
+</div>
+
 <!-- =================== APP SECTION =================== -->
 <div id="appSection">
     <div class="app-container">
@@ -322,6 +398,8 @@
         <div class="app-tabs">
             <button class="app-tab active" id="appTabPredict" onclick="switchAppTab('predict')">Diagnose Image</button>
             <button class="app-tab" id="appTabHistory" onclick="switchAppTab('history')">My History</button>
+            <button class="app-tab" id="appTabProfile" onclick="switchAppTab('profile')">Medical Profile</button>
+            <button class="app-tab" id="appTabAdmin" onclick="switchAppTab('admin')" style="display:none; margin-left:auto; background:#e74c3c; color:white">Admin Panel</button>
         </div>
 
         <!-- PREDICT TAB -->
@@ -395,6 +473,164 @@
                 <div class="history-list" id="historyList"></div>
                 <div id="historyEmpty" class="history-empty" style="display:none">
                     No diagnoses yet. Upload an image to get started.
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div id="panelProfile" class="tab-panel">
+            <div id="profileAuthRequired" class="auth-required-msg" style="display:none">
+                <p style="font-size:1.1em; margin-bottom:8px">Sign in to manage your medical profile</p>
+                <p><a onclick="goToLogin()">Login</a> or <a onclick="goToRegister()">Register</a> to create and update your medical information</p>
+            </div>
+
+            <div id="profileContent" style="display:none; max-width:700px; margin:0 auto">
+                <div class="section-title" style="margin-bottom:24px">Medical Profile</div>
+                <div id="profileLoading" class="history-loading" style="display:none">Loading profile...</div>
+
+                <form id="profileForm" style="display:none">
+                    <!-- Demographics Section -->
+                    <div style="margin-bottom:28px; padding-bottom:28px; border-bottom:1px solid #e8e8e8">
+                        <h3 style="color:#555; font-size:1.1em; margin-bottom:16px">Demographics</h3>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="profileDOB" class="form-input">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select id="profileGender" class="form-input">
+                                    <option value="">Select...</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Blood Type</label>
+                                <select id="profileBloodType" class="form-input">
+                                    <option value="">Select...</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medical History Section -->
+                    <div style="margin-bottom:28px; padding-bottom:28px; border-bottom:1px solid #e8e8e8">
+                        <h3 style="color:#555; font-size:1.1em; margin-bottom:16px">Medical History</h3>
+                        <div class="form-group">
+                            <label>Allergies</label>
+                            <textarea id="profileAllergies" class="form-input" style="min-height:80px; resize:vertical" placeholder="List any allergies (e.g., Penicillin, Latex, Peanuts)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Medical History</label>
+                            <textarea id="profileMedicalHistory" class="form-input" style="min-height:100px; resize:vertical" placeholder="Past medical conditions, surgeries, treatments..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Medications</label>
+                            <textarea id="profileCurrentMeds" class="form-input" style="min-height:80px; resize:vertical" placeholder="List medications you are currently taking..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact Section -->
+                    <div style="margin-bottom:28px">
+                        <h3 style="color:#555; font-size:1.1em; margin-bottom:16px">Emergency Contact</h3>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" id="profileEmergencyName" class="form-input" placeholder="Full name">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" id="profileEmergencyPhone" class="form-input" placeholder="Phone number">
+                            </div>
+                            <div class="form-group">
+                                <label>Relation</label>
+                                <input type="text" id="profileEmergencyRelation" class="form-input" placeholder="Relationship (e.g., Spouse, Parent)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-predict" onclick="saveProfile()" style="width:100%">Save Profile</button>
+                    <div class="auth-error" id="profileError" style="margin-top:12px"></div>
+                    <div class="auth-success" id="profileSuccess" style="margin-top:12px"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ADMIN TAB -->
+        <div id="panelAdmin" class="tab-panel">
+            <div id="adminAuthRequired" class="auth-required-msg" style="display:none">
+                <p style="font-size:1.1em; margin-bottom:8px">Admin access required</p>
+                <p>Only administrators can access this panel</p>
+            </div>
+
+            <div id="adminContent" style="display:none; max-width:1200px; margin:0 auto">
+                <div class="section-title" style="margin-bottom:24px">Admin Dashboard</div>
+
+                <!-- Doctors Section -->
+                <div style="margin-bottom:40px; padding-bottom:40px; border-bottom:1px solid #e8e8e8">
+                    <h3 style="color:#555; font-size:1.2em; margin-bottom:16px">Doctors Management</h3>
+                    <div id="doctorsLoading" class="history-loading" style="display:none">Loading doctors...</div>
+                    <div id="doctorsTable" style="display:none">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.9em">
+                            <thead style="background:#f5f5f5; border-bottom:2px solid #e0e0e0">
+                                <tr>
+                                    <th style="padding:12px; text-align:left">Name</th>
+                                    <th style="padding:12px; text-align:left">Email</th>
+                                    <th style="padding:12px; text-align:left">License</th>
+                                    <th style="padding:12px; text-align:left">Specialization</th>
+                                    <th style="padding:12px; text-align:left">Status</th>
+                                    <th style="padding:12px; text-align:center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doctorsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="doctorsEmpty" class="history-empty" style="display:none">No unverified doctors</div>
+                    <div id="doctorsError" class="auth-error" style="margin-top:12px; display:none"></div>
+                </div>
+
+                <!-- Subscription Requests Section -->
+                <div style="margin-bottom:24px">
+                    <h3 style="color:#555; font-size:1.2em; margin-bottom:16px">Subscription Requests</h3>
+                    <div style="margin-bottom:16px">
+                        <label style="margin-right:20px">
+                            <input type="radio" name="subStatus" value="pending" checked onchange="loadSubscriptionRequests()"> Pending
+                        </label>
+                        <label style="margin-right:20px">
+                            <input type="radio" name="subStatus" value="approved" onchange="loadSubscriptionRequests()"> Approved
+                        </label>
+                        <label>
+                            <input type="radio" name="subStatus" value="declined" onchange="loadSubscriptionRequests()"> Declined
+                        </label>
+                    </div>
+                    <div id="subRequestsLoading" class="history-loading" style="display:none">Loading requests...</div>
+                    <div id="subRequestsTable" style="display:none">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.9em">
+                            <thead style="background:#f5f5f5; border-bottom:2px solid #e0e0e0">
+                                <tr>
+                                    <th style="padding:12px; text-align:left">Contact Info</th>
+                                    <th style="padding:12px; text-align:left">Plan</th>
+                                    <th style="padding:12px; text-align:left">Notes</th>
+                                    <th style="padding:12px; text-align:left">Status</th>
+                                    <th style="padding:12px; text-align:center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subRequestsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="subRequestsEmpty" class="history-empty" style="display:none">No subscription requests</div>
+                    <div id="subRequestsError" class="auth-error" style="margin-top:12px; display:none"></div>
                 </div>
             </div>
         </div>
@@ -556,8 +792,15 @@ function enterApp() {
 
     if (currentUser) {
         document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.email;
+        // Show admin tab if user is admin
+        if (currentUser.is_admin) {
+            document.getElementById('appTabAdmin').style.display = 'block';
+        } else {
+            document.getElementById('appTabAdmin').style.display = 'none';
+        }
     } else {
         document.getElementById('navUserName').textContent = 'Anonymous';
+        document.getElementById('appTabAdmin').style.display = 'none';
     }
 
     switchAppTab('predict');
@@ -570,10 +813,15 @@ function showAppTab(tab) {
 function switchAppTab(tab) {
     document.getElementById('panelPredict').classList.toggle('active', tab === 'predict');
     document.getElementById('panelHistory').classList.toggle('active', tab === 'history');
+    document.getElementById('panelProfile').classList.toggle('active', tab === 'profile');
+    document.getElementById('panelAdmin').classList.toggle('active', tab === 'admin');
     document.getElementById('appTabPredict').classList.toggle('active', tab === 'predict');
     document.getElementById('appTabHistory').classList.toggle('active', tab === 'history');
+    document.getElementById('appTabProfile').classList.toggle('active', tab === 'profile');
+    document.getElementById('appTabAdmin').classList.toggle('active', tab === 'admin');
     document.getElementById('navTabPredict').classList.toggle('active', tab === 'predict');
     document.getElementById('navTabHistory').classList.toggle('active', tab === 'history');
+    document.getElementById('navTabProfile').classList.toggle('active', tab === 'profile');
 
     if (tab === 'history') {
         if (!currentUser) {
@@ -583,6 +831,25 @@ function switchAppTab(tab) {
             document.getElementById('historyAuthRequired').style.display = 'none';
             document.getElementById('historyContent').style.display = 'block';
             loadHistory();
+        }
+    } else if (tab === 'profile') {
+        if (!currentUser) {
+            document.getElementById('profileAuthRequired').style.display = 'block';
+            document.getElementById('profileContent').style.display = 'none';
+        } else {
+            document.getElementById('profileAuthRequired').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'block';
+            loadProfile();
+        }
+    } else if (tab === 'admin') {
+        if (!currentUser || !currentUser.is_admin) {
+            document.getElementById('adminAuthRequired').style.display = 'block';
+            document.getElementById('adminContent').style.display = 'none';
+        } else {
+            document.getElementById('adminAuthRequired').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            loadDoctors();
+            loadSubscriptionRequests();
         }
     }
 }
@@ -798,6 +1065,429 @@ async function loadHistory() {
     } catch (e) {
         loading.style.display = 'none';
         list.innerHTML = '<div class="history-empty">Error loading history.</div>';
+    }
+}
+
+// =====================================================================
+// PROFILE
+// =====================================================================
+async function loadProfile() {
+    if (!currentUser) return;
+
+    const profileForm = document.getElementById('profileForm');
+    const profileLoading = document.getElementById('profileLoading');
+    const profileError = document.getElementById('profileError');
+
+    profileForm.style.display = 'none';
+    profileLoading.style.display = 'block';
+    profileError.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/profile', {method: 'GET'});
+        const data = await res.json();
+        profileLoading.style.display = 'none';
+
+        if (res.ok && data.success) {
+            const profile = data.data;
+            if (profile) {
+                document.getElementById('profileDOB').value = profile.date_of_birth || '';
+                document.getElementById('profileGender').value = profile.gender || '';
+                document.getElementById('profileBloodType').value = profile.blood_type || '';
+                document.getElementById('profileAllergies').value = profile.allergies || '';
+                document.getElementById('profileMedicalHistory').value = profile.medical_history || '';
+                document.getElementById('profileCurrentMeds').value = profile.current_medications || '';
+                document.getElementById('profileEmergencyName').value = profile.emergency_contact_name || '';
+                document.getElementById('profileEmergencyPhone').value = profile.emergency_contact_phone || '';
+                document.getElementById('profileEmergencyRelation').value = profile.emergency_contact_relation || '';
+            }
+            profileForm.style.display = 'block';
+        } else {
+            const msg = data.detail || data.error || 'Failed to load profile';
+            profileError.textContent = msg;
+            profileError.style.display = 'block';
+            profileForm.style.display = 'block';
+        }
+    } catch (e) {
+        profileLoading.style.display = 'none';
+        profileError.textContent = 'Error loading profile: ' + e.message;
+        profileError.style.display = 'block';
+        profileForm.style.display = 'block';
+    }
+}
+
+async function saveProfile() {
+    const profileError = document.getElementById('profileError');
+    const profileSuccess = document.getElementById('profileSuccess');
+    const btn = event.target;
+
+    profileError.style.display = 'none';
+    profileSuccess.style.display = 'none';
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+
+    try {
+        const profileData = {
+            date_of_birth: document.getElementById('profileDOB').value || null,
+            gender: document.getElementById('profileGender').value || null,
+            blood_type: document.getElementById('profileBloodType').value || null,
+            allergies: document.getElementById('profileAllergies').value || null,
+            medical_history: document.getElementById('profileMedicalHistory').value || null,
+            current_medications: document.getElementById('profileCurrentMeds').value || null,
+            emergency_contact_name: document.getElementById('profileEmergencyName').value || null,
+            emergency_contact_phone: document.getElementById('profileEmergencyPhone').value || null,
+            emergency_contact_relation: document.getElementById('profileEmergencyRelation').value || null
+        };
+
+        const res = await fetch('/api/profile', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(profileData)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            profileSuccess.textContent = 'Profile saved successfully!';
+            profileSuccess.style.display = 'block';
+            setTimeout(() => { profileSuccess.style.display = 'none'; }, 3000);
+        } else {
+            const msg = data.detail || data.error || 'Failed to save profile';
+            profileError.textContent = msg;
+            profileError.style.display = 'block';
+        }
+    } catch (e) {
+        profileError.textContent = 'Error saving profile: ' + e.message;
+        profileError.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+// =====================================================================
+// SUBSCRIPTION & DOCTOR REGISTRATION
+// =====================================================================
+function showSubscription() {
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('subscriptionSection').style.display = 'flex';
+    document.getElementById('doctorLoginSection').style.display = 'none';
+    loadSubscriptionPlans();
+}
+
+function showDoctorLogin() {
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('subscriptionSection').style.display = 'none';
+    document.getElementById('doctorLoginSection').style.display = 'flex';
+}
+
+async function loadSubscriptionPlans() {
+    try {
+        const res = await fetch('/api/subscription/plans');
+        const data = await res.json();
+
+        if (data.success && data.data) {
+            const plansList = document.getElementById('plansList');
+            plansList.innerHTML = '';
+
+            data.data.forEach(plan => {
+                const div = document.createElement('div');
+                div.style.cssText = 'padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s;';
+                div.onclick = () => selectPlan(plan.id);
+                div.innerHTML = `<strong>${plan.name}</strong> - ${plan.description || ''}`;
+                plansList.appendChild(div);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading plans:', e);
+    }
+}
+
+let selectedPlanId = null;
+
+function selectPlan(planId) {
+    selectedPlanId = planId;
+    document.querySelectorAll('#plansList > div').forEach(el => {
+        el.style.borderColor = '#e0e0e0';
+        el.style.background = 'transparent';
+    });
+    event.target.closest('div').style.borderColor = '#667eea';
+    event.target.closest('div').style.background = '#f0f0ff';
+}
+
+async function submitSubscriptionRequest() {
+    if (!selectedPlanId) {
+        showSubError('Please select a plan');
+        return;
+    }
+
+    const email = document.getElementById('subEmail').value.trim();
+    if (!email) {
+        showSubError('Please enter your email');
+        return;
+    }
+
+    const notes = document.getElementById('subNotes').value.trim();
+    document.querySelector('[onclick="submitSubscriptionRequest()"]').disabled = true;
+
+    try {
+        const res = await fetch('/api/subscription/request', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                plan_id: selectedPlanId,
+                contact_info: email,
+                notes: notes || null
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            document.getElementById('subSuccess').textContent = 'Subscription request submitted! We will contact you at ' + email;
+            document.getElementById('subSuccess').style.display = 'block';
+            document.getElementById('subError').style.display = 'none';
+            setTimeout(() => showAuth('login'), 2000);
+        } else {
+            showSubError(data.detail || data.error || 'Failed to submit request');
+        }
+    } catch (e) {
+        showSubError('Error: ' + e.message);
+    } finally {
+        document.querySelector('[onclick="submitSubscriptionRequest()"]').disabled = false;
+    }
+}
+
+function showSubError(msg) {
+    const el = document.getElementById('subError');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+async function registerDoctor() {
+    const name = document.getElementById('docName').value.trim();
+    const email = document.getElementById('docEmail').value.trim();
+    const license = document.getElementById('docLicense').value.trim();
+    const spec = document.getElementById('docSpecialization').value.trim();
+    const phone = document.getElementById('docPhone').value.trim();
+    const password = document.getElementById('docPassword').value;
+
+    if (!name || !email || !license || !password) {
+        showDocError('Please fill in all required fields');
+        return;
+    }
+
+    document.querySelector('[onclick="registerDoctor()"]').disabled = true;
+
+    try {
+        const res = await fetch('/api/doctors/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                full_name: name,
+                email: email,
+                license_number: license,
+                specialization: spec || null,
+                phone: phone || null,
+                password: password
+            })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            document.getElementById('docSuccess').textContent = 'Registration submitted! Admin will verify your credentials.';
+            document.getElementById('docSuccess').style.display = 'block';
+            document.getElementById('docError').style.display = 'none';
+            setTimeout(() => showAuth('login'), 2000);
+        } else {
+            showDocError(data.detail || data.error || 'Registration failed');
+        }
+    } catch (e) {
+        showDocError('Error: ' + e.message);
+    } finally {
+        document.querySelector('[onclick="registerDoctor()"]').disabled = false;
+    }
+}
+
+function showDocError(msg) {
+    const el = document.getElementById('docError');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+// =====================================================================
+// ADMIN
+// =====================================================================
+async function loadDoctors() {
+    const table = document.getElementById('doctorsTable');
+    const tbody = document.getElementById('doctorsTableBody');
+    const empty = document.getElementById('doctorsEmpty');
+    const loading = document.getElementById('doctorsLoading');
+    const error = document.getElementById('doctorsError');
+
+    table.style.display = 'none';
+    empty.style.display = 'none';
+    loading.style.display = 'block';
+    error.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/admin/doctors?verified_only=false');
+        const data = await res.json();
+        loading.style.display = 'none';
+
+        if (!res.ok || !data.success) {
+            error.textContent = data.detail || data.error || 'Failed to load doctors';
+            error.style.display = 'block';
+            return;
+        }
+
+        const doctors = data.data || [];
+        if (doctors.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        doctors.forEach(doc => {
+            const status = doc.is_verified ? 'Verified' : 'Pending';
+            const statusColor = doc.is_verified ? '#27ae60' : '#e67e22';
+            const actionBtn = doc.is_verified ?
+                `<button disabled style="background:#ccc; cursor:default">Verified</button>` :
+                `<button class="btn-predict" onclick="verifyDoctor('${doc.id}')">Verify</button>`;
+
+            tbody.innerHTML += `
+                <tr style="border-bottom:1px solid #e0e0e0">
+                    <td style="padding:12px">${doc.full_name || '—'}</td>
+                    <td style="padding:12px">${doc.email || '—'}</td>
+                    <td style="padding:12px">${doc.license_number || '—'}</td>
+                    <td style="padding:12px">${doc.specialization || '—'}</td>
+                    <td style="padding:12px; color:${statusColor}"><strong>${status}</strong></td>
+                    <td style="padding:12px; text-align:center">${actionBtn}</td>
+                </tr>`;
+        });
+
+        table.style.display = 'block';
+    } catch (e) {
+        loading.style.display = 'none';
+        error.textContent = 'Error loading doctors: ' + e.message;
+        error.style.display = 'block';
+    }
+}
+
+async function verifyDoctor(doctorId) {
+    if (!confirm('Verify this doctor?')) return;
+
+    try {
+        const res = await fetch(`/api/admin/doctors/${doctorId}/verify`, {method: 'POST'});
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            alert('Doctor verified successfully!');
+            loadDoctors();
+        } else {
+            alert(data.detail || data.error || 'Failed to verify doctor');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function loadSubscriptionRequests() {
+    const table = document.getElementById('subRequestsTable');
+    const tbody = document.getElementById('subRequestsTableBody');
+    const empty = document.getElementById('subRequestsEmpty');
+    const loading = document.getElementById('subRequestsLoading');
+    const error = document.getElementById('subRequestsError');
+
+    const status = document.querySelector('input[name="subStatus"]:checked').value;
+
+    table.style.display = 'none';
+    empty.style.display = 'none';
+    loading.style.display = 'block';
+    error.style.display = 'none';
+
+    try {
+        const res = await fetch(`/api/admin/subscription-requests?status=${status}`);
+        const data = await res.json();
+        loading.style.display = 'none';
+
+        if (!res.ok || !data.success) {
+            error.textContent = data.detail || data.error || 'Failed to load requests';
+            error.style.display = 'block';
+            return;
+        }
+
+        const requests = data.data || [];
+        if (requests.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        requests.forEach(req => {
+            let actionBtns = '';
+            if (status === 'pending') {
+                actionBtns = `
+                    <button class="btn-predict" style="padding:8px 12px; font-size:0.9em" onclick="approveSubscription('${req.id}')">Approve</button>
+                    <button style="padding:8px 12px; font-size:0.9em; background:#e74c3c; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:4px" onclick="declineSubscription('${req.id}')">Decline</button>`;
+            } else {
+                actionBtns = `<span style="color:#888">—</span>`;
+            }
+
+            tbody.innerHTML += `
+                <tr style="border-bottom:1px solid #e0e0e0">
+                    <td style="padding:12px">${req.contact_info || '—'}</td>
+                    <td style="padding:12px">${req.plan_name || req.plan_id || '—'}</td>
+                    <td style="padding:12px; max-width:200px; overflow:hidden; text-overflow:ellipsis">${req.notes || '—'}</td>
+                    <td style="padding:12px; text-transform:capitalize">${req.status || '—'}</td>
+                    <td style="padding:12px; text-align:center">${actionBtns}</td>
+                </tr>`;
+        });
+
+        table.style.display = 'block';
+    } catch (e) {
+        loading.style.display = 'none';
+        error.textContent = 'Error loading requests: ' + e.message;
+        error.style.display = 'block';
+    }
+}
+
+async function approveSubscription(requestId) {
+    if (!confirm('Approve this subscription request?')) return;
+
+    try {
+        const res = await fetch(`/api/admin/subscription-requests/${requestId}/approve`, {method: 'POST'});
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            alert('Subscription approved!');
+            loadSubscriptionRequests();
+        } else {
+            alert(data.detail || data.error || 'Failed to approve');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function declineSubscription(requestId) {
+    const reason = prompt('Enter decline reason (optional):');
+    if (reason === null) return;
+
+    try {
+        const res = await fetch(`/api/admin/subscription-requests/${requestId}/decline`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({reason: reason || null})
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            alert('Subscription request declined');
+            loadSubscriptionRequests();
+        } else {
+            alert(data.detail || data.error || 'Failed to decline');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
     }
 }
 

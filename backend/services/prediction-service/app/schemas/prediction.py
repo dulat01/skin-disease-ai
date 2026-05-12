@@ -45,6 +45,10 @@ class PredictionResponse(BaseModel):
     status: str
     error_message: Optional[str] = None
     celery_task_id: Optional[str] = None
+    doctor_id: Optional[str] = None
+    doctor_approved: Optional[bool] = None
+    doctor_notes: Optional[str] = None
+    doctor_reviewed_at: Optional[datetime] = None
     created_at: datetime
     completed_at: Optional[datetime] = None
 

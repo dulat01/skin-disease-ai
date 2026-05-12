@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth_router, users_router
+from app.routers import auth_router, users_router, doctors_router, admin_router, public_router
 
 # Configure logging
 logging.basicConfig(
@@ -56,6 +56,9 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(doctors_router)
+app.include_router(admin_router)
+app.include_router(public_router)
 
 
 @app.get("/health")

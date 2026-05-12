@@ -23,6 +23,10 @@ PUBLIC_PATHS = [
     "/api/v1/auth/register",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
+    "/api/v1/auth/doctors/register",
+    "/api/v1/auth/doctors/login",
+    "/api/v1/auth/subscription/request",
+    "/api/v1/public",  # All public endpoints
 ]
 
 

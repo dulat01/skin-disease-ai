@@ -40,6 +40,12 @@ class Prediction(Base):
     # Celery task (for async predictions)
     celery_task_id = Column(String(255), nullable=True, index=True)
 
+    # Doctor review (if user has subscription)
+    doctor_id = Column(UUID(as_uuid=True), nullable=True, index=True)  # Doctor assigned to review
+    doctor_approved = Column(Boolean, nullable=True)
+    doctor_notes = Column(Text, nullable=True)
+    doctor_reviewed_at = Column(DateTime, nullable=True)
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     completed_at = Column(DateTime, nullable=True)
@@ -62,6 +68,10 @@ class Prediction(Base):
             "status": self.status,
             "error_message": self.error_message,
             "celery_task_id": self.celery_task_id,
+            "doctor_id": str(self.doctor_id) if self.doctor_id else None,
+            "doctor_approved": self.doctor_approved,
+            "doctor_notes": self.doctor_notes,
+            "doctor_reviewed_at": self.doctor_reviewed_at.isoformat() if self.doctor_reviewed_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }

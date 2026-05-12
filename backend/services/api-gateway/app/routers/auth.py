@@ -119,3 +119,75 @@ async def change_password(request: Request):
 async def verify_token(request: Request):
     """Proxy token verification to auth service"""
     return await proxy_request(request, "/api/v1/auth/verify", "POST")
+
+
+@router.get("/profile")
+async def get_patient_profile(request: Request):
+    """Proxy get patient profile to auth service"""
+    return await proxy_request(request, "/api/v1/auth/profile", "GET")
+
+
+@router.put("/profile")
+async def update_patient_profile(request: Request):
+    """Proxy update patient profile to auth service"""
+    return await proxy_request(request, "/api/v1/auth/profile", "PUT")
+
+
+@router.post("/doctors/register")
+async def register_doctor(request: Request):
+    """Proxy doctor registration to auth service"""
+    return await proxy_request(request, "/api/v1/doctors/register", "POST")
+
+
+@router.post("/doctors/login")
+async def login_doctor(request: Request):
+    """Proxy doctor login to auth service"""
+    return await proxy_request(request, "/api/v1/doctors/login", "POST")
+
+
+@router.get("/doctors/plans")
+async def get_subscription_plans(request: Request):
+    """Proxy get subscription plans to auth service"""
+    return await proxy_request(request, "/api/v1/doctors/plans", "GET")
+
+
+@router.post("/subscription/request")
+async def request_subscription(request: Request):
+    """Proxy subscription request to auth service"""
+    return await proxy_request(request, "/api/v1/public/subscription/request", "POST")
+
+
+@router.get("/subscription/status")
+async def get_subscription_status(request: Request):
+    """Proxy get subscription status to auth service"""
+    return await proxy_request(request, "/api/v1/doctors/subscription/status", "GET")
+
+
+@router.get("/admin/doctors")
+async def list_doctors(request: Request):
+    """Proxy list doctors to auth service"""
+    return await proxy_request(request, f"/api/v1/admin/doctors?verified_only={request.query_params.get('verified_only', False)}", "GET")
+
+
+@router.post("/admin/doctors/{doctor_id}/verify")
+async def verify_doctor(request: Request, doctor_id: str):
+    """Proxy verify doctor to auth service"""
+    return await proxy_request(request, f"/api/v1/admin/doctors/{doctor_id}/verify", "POST")
+
+
+@router.get("/admin/subscription-requests")
+async def list_subscription_requests(request: Request):
+    """Proxy list subscription requests to auth service"""
+    return await proxy_request(request, f"/api/v1/admin/subscription-requests?status={request.query_params.get('status', 'pending')}", "GET")
+
+
+@router.post("/admin/subscription-requests/{request_id}/approve")
+async def approve_subscription_request(request: Request, request_id: str):
+    """Proxy approve subscription request to auth service"""
+    return await proxy_request(request, f"/api/v1/admin/subscription-requests/{request_id}/approve", "POST")
+
+
+@router.post("/admin/subscription-requests/{request_id}/decline")
+async def decline_subscription_request(request: Request, request_id: str):
+    """Proxy decline subscription request to auth service"""
+    return await proxy_request(request, f"/api/v1/admin/subscription-requests/{request_id}/decline", "POST")

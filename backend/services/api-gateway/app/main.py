@@ -12,7 +12,7 @@ from app.config import settings
 from app.middleware.rate_limiter import RateLimiterMiddleware
 from app.middleware.auth import AuthMiddleware
 from app.middleware.cors import setup_cors
-from app.routers import auth_router, predictions_router, admin_router
+from app.routers import auth_router, predictions_router, admin_router, public_router
 
 # Configure logging
 logging.basicConfig(
@@ -115,6 +115,7 @@ async def rate_limit_middleware(request: Request, call_next):
 
 
 # Include routers
+app.include_router(public_router)
 app.include_router(auth_router)
 app.include_router(predictions_router)
 app.include_router(admin_router)

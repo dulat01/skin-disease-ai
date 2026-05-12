@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import init_db
-from app.routers import dashboard_router, users_router, models_router
+from app.routers import dashboard_router, users_router, models_router, doctors_router
 from app.events.consumer import start_event_consumer, stop_event_consumer
 
 # Configure logging
@@ -66,6 +66,7 @@ app.add_middleware(
 app.include_router(dashboard_router)
 app.include_router(users_router)
 app.include_router(models_router)
+app.include_router(doctors_router)
 
 
 @app.get("/health")

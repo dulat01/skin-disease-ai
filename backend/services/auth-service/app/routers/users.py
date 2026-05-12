@@ -5,9 +5,12 @@ from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.database import get_db
 from app.schemas.user import UserResponse, UserUpdate, PasswordChange
+from app.schemas.patient_profile import PatientProfileUpdate, PatientProfileResponse
+from app.models import PatientProfile
 from app.services.user import UserService
 from app.services.jwt import jwt_service
 
@@ -150,4 +153,67 @@ async def delete_current_user(
     return {
         "success": True,
         "message": "Account deactivated successfully"
+    }
+
+
+@router.get("/profile", response_model=dict)
+async def get_patient_profile(
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get the current user's patient profile.
+    Returns an empty profile if one doesn't exist yet.
+    """
+    stmt = select(PatientProfile).where(PatientProfile.user_id == user_id)
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
+
+    if not profile:
+        return {
+            "success": True,
+            "message": "Patient profile not found",
+            "data": None
+        }
+
+    return {
+        "success": True,
+        "message": "Patient profile retrieved successfully",
+        "data": PatientProfileResponse.model_validate(profile.to_dict())
+    }
+
+
+@router.put("/profile", response_model=dict)
+async def upsert_patient_profile(
+    profile_data: PatientProfileUpdate,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Create or update the current user's patient profile.
+    All fields are optional.
+    """
+    stmt = select(PatientProfile).where(PatientProfile.user_id == user_id)
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
+
+    if profile:
+        # Update existing profile
+        for field, value in profile_data.model_dump(exclude_unset=True).items():
+            setattr(profile, field, value)
+    else:
+        # Create new profile
+        profile = PatientProfile(
+            user_id=user_id,
+            **profile_data.model_dump(exclude_unset=True)
+        )
+        db.add(profile)
+
+    await db.commit()
+    await db.refresh(profile)
+
+    return {
+        "success": True,
+        "message": "Patient profile saved successfully",
+        "data": PatientProfileResponse.model_validate(profile.to_dict())
     }

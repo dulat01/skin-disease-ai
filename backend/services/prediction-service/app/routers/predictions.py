@@ -13,6 +13,7 @@ from app.schemas.prediction import PredictionResponse, TaskStatusResponse, TopPr
 from app.services.predictor import PredictorService
 from app.services.storage import get_storage_service
 from app.services.image_processor import ImageProcessor
+from app.services.subscription import SubscriptionService
 from app.tasks.prediction_tasks import predict_async
 from app.events.publisher import EventPublisher
 
@@ -57,6 +58,17 @@ async def create_prediction(
             original_filename=image.filename or "image.jpg"
         )
 
+        # Check if user has active subscription and assign doctor
+        subscription_service = SubscriptionService(db)
+        has_subscription = await subscription_service.check_user_subscription(user_id)
+
+        if has_subscription:
+            doctor_id = await subscription_service.get_next_available_doctor()
+            if doctor_id:
+                prediction.doctor_id = doctor_id
+                await db.commit()
+                await db.refresh(prediction)
+
         # Publish event
         publisher = EventPublisher()
         await publisher.publish_prediction_completed(prediction)
@@ -88,6 +100,10 @@ async def create_prediction(
                 processing_time_ms=prediction.processing_time_ms,
                 model_version=prediction.model_version,
                 status=prediction.status,
+                doctor_id=str(prediction.doctor_id) if prediction.doctor_id else None,
+                doctor_approved=prediction.doctor_approved,
+                doctor_notes=prediction.doctor_notes,
+                doctor_reviewed_at=prediction.doctor_reviewed_at,
                 created_at=prediction.created_at,
                 completed_at=prediction.completed_at
             )

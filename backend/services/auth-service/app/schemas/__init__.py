@@ -10,3 +10,16 @@ from .token import (
     LoginRequest,
     RefreshTokenRequest
 )
+from .patient_profile import (
+    PatientProfileUpdate,
+    PatientProfileResponse
+)
+from .doctor import (
+    DoctorRegister,
+    DoctorLogin,
+    DoctorResponse,
+    SubscriptionPlanResponse,
+    SubscriptionResponse,
+    SubscriptionRequestCreate,
+    SubscriptionRequestResponse
+)
