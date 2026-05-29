@@ -1,6 +1,7 @@
 """
 Admin Router - doctor and subscription management for admins
 """
+from datetime import datetime
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,8 +38,11 @@ async def list_doctors(
                     "full_name": doctor.full_name,
                     "license_number": doctor.license_number,
                     "specialization": doctor.specialization,
+                    "phone": doctor.phone,
                     "is_verified": doctor.is_verified,
-                    "created_at": doctor.created_at.isoformat() if doctor.created_at else None
+                    "is_active": doctor.is_active,
+                    "created_at": doctor.created_at.isoformat() if doctor.created_at else None,
+                    "verified_at": doctor.verified_at.isoformat() if doctor.verified_at else None,
                 }
                 for doctor in doctors
             ]
@@ -65,12 +69,14 @@ async def verify_doctor(
             )
 
         doctor.is_verified = True
+        doctor.is_active = True
+        doctor.verified_at = datetime.utcnow()
         await db.commit()
         await db.refresh(doctor)
 
         return {
             "success": True,
-            "message": "Doctor verified successfully",
+            "message": "Doctor approved successfully",
             "data": {
                 "id": str(doctor.id),
                 "email": doctor.email,
@@ -80,10 +86,32 @@ async def verify_doctor(
         }
     except Exception as e:
         await db.rollback()
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/doctors/{doctor_id}/reject", response_model=dict)
+async def reject_doctor(
+    doctor_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """Admin: reject a doctor registration"""
+    try:
+        doctor = await db.get(Doctor, doctor_id)
+        if not doctor:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
+
+        doctor.is_verified = False
+        doctor.is_active = False
+        await db.commit()
+
         return {
-            "success": False,
-            "error": str(e)
+            "success": True,
+            "message": "Doctor rejected",
+            "data": {"id": str(doctor.id), "email": doctor.email}
         }
+    except Exception as e:
+        await db.rollback()
+        return {"success": False, "error": str(e)}
 
 
 @router.get("/subscription-requests", response_model=dict)

@@ -175,6 +175,12 @@ async def verify_doctor(request: Request, doctor_id: str):
     return await proxy_request(request, f"/api/v1/admin/doctors/{doctor_id}/verify", "POST")
 
 
+@router.post("/admin/doctors/{doctor_id}/reject")
+async def reject_doctor(request: Request, doctor_id: str):
+    """Proxy reject doctor to auth service"""
+    return await proxy_request(request, f"/api/v1/admin/doctors/{doctor_id}/reject", "POST")
+
+
 @router.get("/admin/subscription-requests")
 async def list_subscription_requests(request: Request):
     """Proxy list subscription requests to auth service"""

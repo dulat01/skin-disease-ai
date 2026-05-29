@@ -625,32 +625,37 @@
                 <p>Only administrators can access this panel</p>
             </div>
 
-            <div id="adminContent" style="display:none; max-width:1200px; margin:0 auto">
-                <div class="section-title" style="margin-bottom:24px">Admin Dashboard</div>
-
-                <!-- Doctors Section -->
-                <div style="margin-bottom:40px; padding-bottom:40px; border-bottom:1px solid #e8e8e8">
-                    <h3 style="color:#555; font-size:1.2em; margin-bottom:16px">Doctors Management</h3>
-                    <div id="doctorsLoading" class="history-loading" style="display:none">Loading doctors...</div>
-                    <div id="doctorsTable" style="display:none">
-                        <table style="width:100%; border-collapse:collapse; font-size:0.9em">
-                            <thead style="background:#f5f5f5; border-bottom:2px solid #e0e0e0">
-                                <tr>
-                                    <th style="padding:12px; text-align:left">Name</th>
-                                    <th style="padding:12px; text-align:left">Email</th>
-                                    <th style="padding:12px; text-align:left">License</th>
-                                    <th style="padding:12px; text-align:left">Specialization</th>
-                                    <th style="padding:12px; text-align:left">Status</th>
-                                    <th style="padding:12px; text-align:center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="doctorsTableBody"></tbody>
-                        </table>
-                    </div>
-                    <div id="doctorsEmpty" class="history-empty" style="display:none">No unverified doctors</div>
-                    <div id="doctorsError" class="auth-error" style="margin-top:12px; display:none"></div>
+            <div id="adminContent" style="display:none; max-width:1100px; margin:0 auto">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px">
+                    <div class="section-title" style="margin-bottom:0">Doctor Approvals</div>
+                    <button class="btn-refresh" onclick="loadDoctors()">Refresh</button>
                 </div>
 
+                <!-- Filter tabs -->
+                <div style="display:flex; gap:0; margin-bottom:24px; border-radius:8px; overflow:hidden; border:1px solid #e0e0e0; width:fit-content">
+                    <button id="docFilterPending" onclick="setDoctorFilter('pending')"
+                        style="padding:8px 20px; border:none; cursor:pointer; font-weight:600; font-size:0.88em; background:#667eea; color:white">
+                        Pending <span id="pendingBadge" style="background:white;color:#667eea;border-radius:10px;padding:1px 7px;font-size:0.85em;margin-left:4px">0</span>
+                    </button>
+                    <button id="docFilterApproved" onclick="setDoctorFilter('approved')"
+                        style="padding:8px 20px; border:none; cursor:pointer; font-weight:600; font-size:0.88em; background:#f5f5f5; color:#555">
+                        Approved
+                    </button>
+                    <button id="docFilterAll" onclick="setDoctorFilter('all')"
+                        style="padding:8px 20px; border:none; cursor:pointer; font-weight:600; font-size:0.88em; background:#f5f5f5; color:#555">
+                        All
+                    </button>
+                </div>
+
+                <div id="doctorsLoading" class="history-loading" style="display:none">Loading...</div>
+                <div id="doctorsEmpty" class="history-empty" style="display:none">No doctors found</div>
+                <div id="doctorsError" class="auth-error" style="margin-top:12px; display:none"></div>
+                <div id="doctorCards" style="display:flex; flex-direction:column; gap:12px"></div>
+
+                <!-- Toast notification -->
+                <div id="adminToast" style="display:none; position:fixed; bottom:30px; right:30px; padding:14px 22px;
+                    border-radius:10px; font-weight:600; font-size:0.92em; z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,0.15)">
+                </div>
             </div>
         </div>
     </div>
@@ -1452,17 +1457,99 @@ async function submitDoctorReview(predId, approved) {
 // =====================================================================
 // ADMIN
 // =====================================================================
-async function loadDoctors() {
-    const table = document.getElementById('doctorsTable');
-    const tbody = document.getElementById('doctorsTableBody');
+let currentDoctorFilter = 'pending';
+let allDoctors = [];
+
+function setDoctorFilter(filter) {
+    currentDoctorFilter = filter;
+    ['pending','approved','all'].forEach(f => {
+        const btn = document.getElementById(`docFilter${f.charAt(0).toUpperCase()+f.slice(1)}`);
+        btn.style.background = f === filter ? '#667eea' : '#f5f5f5';
+        btn.style.color = f === filter ? 'white' : '#555';
+    });
+    renderDoctorCards();
+}
+
+function renderDoctorCards() {
+    const cards = document.getElementById('doctorCards');
     const empty = document.getElementById('doctorsEmpty');
+
+    let filtered = allDoctors;
+    if (currentDoctorFilter === 'pending') filtered = allDoctors.filter(d => !d.is_verified && d.is_active !== false);
+    if (currentDoctorFilter === 'approved') filtered = allDoctors.filter(d => d.is_verified);
+
+    // Update pending badge
+    const pending = allDoctors.filter(d => !d.is_verified && d.is_active !== false).length;
+    document.getElementById('pendingBadge').textContent = pending;
+
+    if (filtered.length === 0) {
+        cards.innerHTML = '';
+        empty.style.display = 'block';
+        empty.textContent = currentDoctorFilter === 'pending' ? 'No pending doctor registrations' :
+                            currentDoctorFilter === 'approved' ? 'No approved doctors yet' : 'No doctors registered';
+        return;
+    }
+
+    empty.style.display = 'none';
+    cards.innerHTML = filtered.map(doc => {
+        const date = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '—';
+        const verifiedDate = doc.verified_at ? new Date(doc.verified_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : null;
+        const isRejected = !doc.is_verified && doc.is_active === false;
+
+        let statusBadge, actions;
+        if (doc.is_verified) {
+            statusBadge = `<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:12px;font-size:0.8em;font-weight:700">✅ Approved${verifiedDate ? ' · '+verifiedDate : ''}</span>`;
+            actions = `<button onclick="rejectDoctor('${doc.id}','${doc.full_name}')"
+                style="padding:7px 16px;border:1.5px solid #e74c3c;border-radius:6px;background:white;color:#e74c3c;font-weight:600;cursor:pointer;font-size:0.85em">
+                Revoke</button>`;
+        } else if (isRejected) {
+            statusBadge = `<span style="background:#f8d7da;color:#721c24;padding:4px 12px;border-radius:12px;font-size:0.8em;font-weight:700">❌ Rejected</span>`;
+            actions = `<button onclick="approveDoctor('${doc.id}','${doc.full_name}')"
+                style="padding:7px 16px;border:none;border-radius:6px;background:#27ae60;color:white;font-weight:600;cursor:pointer;font-size:0.85em">
+                Approve</button>`;
+        } else {
+            statusBadge = `<span style="background:#fff3cd;color:#856404;padding:4px 12px;border-radius:12px;font-size:0.8em;font-weight:700">⏳ Pending Review</span>`;
+            actions = `
+                <button onclick="approveDoctor('${doc.id}','${doc.full_name}')"
+                    style="padding:7px 18px;border:none;border-radius:6px;background:#27ae60;color:white;font-weight:700;cursor:pointer;font-size:0.88em;margin-right:8px">
+                    ✅ Approve</button>
+                <button onclick="rejectDoctor('${doc.id}','${doc.full_name}')"
+                    style="padding:7px 18px;border:none;border-radius:6px;background:#e74c3c;color:white;font-weight:700;cursor:pointer;font-size:0.88em">
+                    ❌ Reject</button>`;
+        }
+
+        return `
+        <div id="doccard-${doc.id}" style="background:white;border:1px solid #e8e8f0;border-radius:12px;padding:18px 22px;
+            display:flex;justify-content:space-between;align-items:center;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+            <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+                    <span style="font-weight:700;font-size:1em;color:#333">${doc.full_name || '—'}</span>
+                    ${statusBadge}
+                </div>
+                <div style="color:#555;font-size:0.85em;display:flex;flex-wrap:wrap;gap:16px">
+                    <span>📧 ${doc.email}</span>
+                    <span>🪪 ${doc.license_number || '—'}</span>
+                    ${doc.specialization ? `<span>🩺 ${doc.specialization}</span>` : ''}
+                    ${doc.phone ? `<span>📞 ${doc.phone}</span>` : ''}
+                    <span>📅 Registered ${date}</span>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                ${actions}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function loadDoctors() {
     const loading = document.getElementById('doctorsLoading');
     const error = document.getElementById('doctorsError');
+    const cards = document.getElementById('doctorCards');
 
-    table.style.display = 'none';
-    empty.style.display = 'none';
-    loading.style.display = 'block';
+    cards.innerHTML = '';
+    document.getElementById('doctorsEmpty').style.display = 'none';
     error.style.display = 'none';
+    loading.style.display = 'block';
 
     try {
         const res = await fetch('/api/admin/doctors?verified_only=false');
@@ -1475,32 +1562,8 @@ async function loadDoctors() {
             return;
         }
 
-        const doctors = data.data || [];
-        if (doctors.length === 0) {
-            empty.style.display = 'block';
-            return;
-        }
-
-        tbody.innerHTML = '';
-        doctors.forEach(doc => {
-            const status = doc.is_verified ? 'Verified' : 'Pending';
-            const statusColor = doc.is_verified ? '#27ae60' : '#e67e22';
-            const actionBtn = doc.is_verified ?
-                `<button disabled style="background:#ccc; cursor:default">Verified</button>` :
-                `<button class="btn-predict" onclick="verifyDoctor('${doc.id}')">Verify</button>`;
-
-            tbody.innerHTML += `
-                <tr style="border-bottom:1px solid #e0e0e0">
-                    <td style="padding:12px">${doc.full_name || '—'}</td>
-                    <td style="padding:12px">${doc.email || '—'}</td>
-                    <td style="padding:12px">${doc.license_number || '—'}</td>
-                    <td style="padding:12px">${doc.specialization || '—'}</td>
-                    <td style="padding:12px; color:${statusColor}"><strong>${status}</strong></td>
-                    <td style="padding:12px; text-align:center">${actionBtn}</td>
-                </tr>`;
-        });
-
-        table.style.display = 'block';
+        allDoctors = data.data || [];
+        renderDoctorCards();
     } catch (e) {
         loading.style.display = 'none';
         error.textContent = 'Error loading doctors: ' + e.message;
@@ -1508,21 +1571,50 @@ async function loadDoctors() {
     }
 }
 
-async function verifyDoctor(doctorId) {
-    if (!confirm('Verify this doctor?')) return;
+function showAdminToast(msg, success) {
+    const toast = document.getElementById('adminToast');
+    toast.textContent = msg;
+    toast.style.background = success ? '#27ae60' : '#e74c3c';
+    toast.style.color = 'white';
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
 
+async function approveDoctor(doctorId, name) {
+    const card = document.getElementById(`doccard-${doctorId}`);
+    if (card) card.style.opacity = '0.6';
     try {
         const res = await fetch(`/api/admin/doctors/${doctorId}/verify`, {method: 'POST'});
         const data = await res.json();
-
         if (res.ok && data.success) {
-            alert('Doctor verified successfully!');
-            loadDoctors();
+            showAdminToast(`✅ ${name} approved`, true);
+            await loadDoctors();
         } else {
-            alert(data.detail || data.error || 'Failed to verify doctor');
+            if (card) card.style.opacity = '1';
+            showAdminToast(data.detail || data.error || 'Failed to approve', false);
         }
     } catch (e) {
-        alert('Error: ' + e.message);
+        if (card) card.style.opacity = '1';
+        showAdminToast('Error: ' + e.message, false);
+    }
+}
+
+async function rejectDoctor(doctorId, name) {
+    const card = document.getElementById(`doccard-${doctorId}`);
+    if (card) card.style.opacity = '0.6';
+    try {
+        const res = await fetch(`/api/admin/doctors/${doctorId}/reject`, {method: 'POST'});
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showAdminToast(`❌ ${name} rejected`, true);
+            await loadDoctors();
+        } else {
+            if (card) card.style.opacity = '1';
+            showAdminToast(data.detail || data.error || 'Failed to reject', false);
+        }
+    } catch (e) {
+        if (card) card.style.opacity = '1';
+        showAdminToast('Error: ' + e.message, false);
     }
 }
 

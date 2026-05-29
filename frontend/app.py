@@ -399,6 +399,22 @@ def admin_verify_doctor(doctor_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/doctors/<doctor_id>/reject', methods=['POST'])
+def admin_reject_doctor(doctor_id):
+    if not session.get('access_token'):
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    try:
+        resp = requests.post(
+            f"{API_GATEWAY_URL}/api/v1/auth/admin/doctors/{doctor_id}/reject",
+            headers=get_auth_headers(),
+            timeout=10
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/admin/subscription-requests/<request_id>/decline', methods=['POST'])
 def admin_decline_subscription(request_id):
     if not session.get('access_token'):
