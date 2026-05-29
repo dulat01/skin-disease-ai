@@ -5,11 +5,12 @@ Communicates with the microservices backend instead of using local models
 
 import requests
 import json
+import uuid
 from typing import Dict, Any, Optional
 from pathlib import Path
 
 class BackendClient:
-    def __init__(self, api_url: str = "http://localhost:8000", user_id: str = "local-user"):
+    def __init__(self, api_url: str = "http://localhost:8002", user_id: str = None):
         """
         Initialize backend client
 
@@ -18,10 +19,10 @@ class BackendClient:
             user_id: User identifier for predictions
         """
         self.api_url = api_url.rstrip('/')
-        self.user_id = user_id
+        self.user_id = user_id or str(uuid.uuid4())
         self.session = requests.Session()
         self.session.headers.update({
-            'X-User-ID': user_id,
+            'X-User-ID': self.user_id,
             'Accept': 'application/json'
         })
 

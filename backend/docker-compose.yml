@@ -192,7 +192,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
       - MINIO_BUCKET=skin-disease-images
-      - MODEL_PATH=/app/models/final_model_CAS.pth
+      - MODEL_PATH=/app/models/best_model_CAS_STAGE1.pth
       - CLASS_MAPPING_PATH=/app/models/class_mapping_ru.json
     volumes:
       - ../models:/app/models:ro
@@ -230,7 +230,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
       - MINIO_BUCKET=skin-disease-images
-      - MODEL_PATH=/app/models/final_model_CAS.pth
+      - MODEL_PATH=/app/models/best_model_CAS_STAGE1.pth
       - CLASS_MAPPING_PATH=/app/models/class_mapping_ru.json
     volumes:
       - ../models:/app/models:ro
