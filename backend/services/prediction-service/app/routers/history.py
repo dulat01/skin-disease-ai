@@ -68,6 +68,11 @@ async def get_prediction_history(
             status=pred.status,
             error_message=pred.error_message,
             celery_task_id=pred.celery_task_id,
+            user_message=pred.user_message,
+            doctor_id=str(pred.doctor_id) if pred.doctor_id else None,
+            doctor_approved=pred.doctor_approved,
+            doctor_notes=pred.doctor_notes,
+            doctor_reviewed_at=pred.doctor_reviewed_at,
             created_at=pred.created_at,
             completed_at=pred.completed_at
         ))

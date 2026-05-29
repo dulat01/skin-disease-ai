@@ -45,12 +45,36 @@ class PredictionResponse(BaseModel):
     status: str
     error_message: Optional[str] = None
     celery_task_id: Optional[str] = None
+    user_message: Optional[str] = None
     doctor_id: Optional[str] = None
     doctor_approved: Optional[bool] = None
     doctor_notes: Optional[str] = None
     doctor_reviewed_at: Optional[datetime] = None
     created_at: datetime
     completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class DoctorReviewCreate(BaseModel):
+    """Schema for doctor review submission"""
+    approved: bool
+    notes: Optional[str] = Field(None, max_length=2000)
+
+
+class DoctorQueueItem(BaseModel):
+    """Prediction item in doctor's review queue"""
+    id: str
+    user_id: str
+    original_filename: Optional[str] = None
+    predicted_class: Optional[str] = None
+    confidence: Optional[float] = None
+    is_malignant: Optional[bool] = None
+    top_predictions: Optional[List[TopPrediction]] = None
+    user_message: Optional[str] = None
+    created_at: datetime
+    status: str
 
     class Config:
         from_attributes = True

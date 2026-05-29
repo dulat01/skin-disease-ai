@@ -154,6 +154,12 @@ async def get_history(request: Request):
     return await proxy_request(request, "/api/v1/predictions/history", "GET")
 
 
+@router.get("/doctor/queue")
+async def get_doctor_queue(request: Request):
+    """Doctor: get pending review queue"""
+    return await proxy_request(request, "/api/v1/predictions/doctor/queue", "GET")
+
+
 @router.get("/{prediction_id}")
 async def get_prediction(prediction_id: str, request: Request):
     """Get prediction by ID"""
@@ -164,3 +170,9 @@ async def get_prediction(prediction_id: str, request: Request):
 async def submit_feedback(prediction_id: str, request: Request):
     """Submit feedback for a prediction"""
     return await proxy_request(request, f"/api/v1/predictions/{prediction_id}/feedback", "POST")
+
+
+@router.post("/{prediction_id}/review")
+async def review_prediction(prediction_id: str, request: Request):
+    """Doctor: approve or reject a prediction"""
+    return await proxy_request(request, f"/api/v1/predictions/{prediction_id}/review", "POST")

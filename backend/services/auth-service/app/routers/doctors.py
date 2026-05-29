@@ -2,8 +2,15 @@
 Doctors Router - doctor registration and subscription management
 """
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def get_user_id_from_header(x_user_id: str = Header(...)) -> UUID:
+    try:
+        return UUID(x_user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID")
 
 from app.database import get_db
 from app.schemas import (
@@ -121,7 +128,7 @@ async def get_subscription_plans(db: AsyncSession = Depends(get_db)):
 @router.post("/subscription/request", response_model=dict)
 async def request_subscription(
     request_data: SubscriptionRequestCreate,
-    user_id: UUID = Depends(lambda: None),  # Will be set by middleware
+    user_id: UUID = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
     """User: request a subscription"""
@@ -144,15 +151,10 @@ async def request_subscription(
 
 @router.get("/subscription/status", response_model=dict)
 async def get_subscription_status(
-    user_id: UUID = Depends(lambda: None),
+    user_id: UUID = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
     """User: check their subscription status"""
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
 
     subscription_service = SubscriptionService(db)
     sub = await subscription_service.get_user_subscription(user_id)
@@ -173,15 +175,10 @@ async def get_subscription_status(
 
 @router.get("/dashboard/pending", response_model=dict)
 async def get_pending_predictions(
-    doctor_id: UUID = Depends(lambda: None),
+    doctor_id: UUID = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
     """Doctor: get pending predictions for review"""
-    if not doctor_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
 
     # This will be called by prediction service to get pending predictions
     # For now, return placeholder that prediction service will populate
@@ -196,15 +193,10 @@ async def get_pending_predictions(
 async def approve_prediction(
     prediction_id: UUID,
     approval_data: dict,
-    doctor_id: UUID = Depends(lambda: None),
+    doctor_id: UUID = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
     """Doctor: approve a prediction with recommendations"""
-    if not doctor_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
 
     # This endpoint will be implemented to call prediction service
     # and update the prediction with doctor approval

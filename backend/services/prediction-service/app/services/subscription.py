@@ -1,5 +1,5 @@
 """
-Subscription service - check user subscriptions and assign doctors
+Doctor assignment service for predictions
 """
 import httpx
 from uuid import UUID
@@ -13,60 +13,41 @@ AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth-service:8001')
 
 
 class SubscriptionService:
-    """Check subscriptions and manage doctor assignments"""
+    """Manages doctor assignment for predictions"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def check_user_subscription(self, user_id: str) -> bool:
-        """Check if user has active subscription via auth service"""
+    async def get_next_available_doctor(self) -> UUID:
+        """Get next verified doctor from auth service using round-robin assignment"""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(
-                    f"{AUTH_SERVICE_URL}/api/v1/auth/subscription/status",
-                    headers={"Authorization": f"Bearer {user_id}"}
+                    f"{AUTH_SERVICE_URL}/api/v1/admin/doctors",
+                    params={"verified_only": "true"}
                 )
-                if response.status_code == 200:
-                    result = response.json()
-                    return result.get('data') is not None
-                return False
-        except Exception as e:
-            print(f"Error checking subscription: {e}")
-            return False
-
-    async def get_next_available_doctor(self) -> UUID:
-        """Get next doctor using round-robin assignment"""
-        try:
-            from app.models import Doctor
-
-            # Get all verified doctors
-            stmt = select(Doctor).where(Doctor.is_verified == True)
-            result = await self.db.execute(stmt)
-            doctors = result.scalars().all()
+                if response.status_code != 200:
+                    return None
+                doctors = response.json().get("data", [])
 
             if not doctors:
                 return None
 
-            # If only one doctor, return it
             if len(doctors) == 1:
-                return doctors[0].id
+                return UUID(doctors[0]["id"])
 
-            # Round-robin: find doctor with least assigned predictions
+            # Round-robin: pick doctor with fewest pending predictions
             doctor_counts = {}
             for doctor in doctors:
+                doc_uuid = UUID(doctor["id"])
                 stmt = select(func.count(Prediction.id)).where(
-                    Prediction.doctor_id == doctor.id,
-                    Prediction.doctor_approved == None  # Not yet reviewed
+                    Prediction.doctor_id == doc_uuid,
+                    Prediction.doctor_approved == None
                 )
                 result = await self.db.execute(stmt)
-                count = result.scalar() or 0
-                doctor_counts[doctor.id] = count
+                doctor_counts[doc_uuid] = result.scalar() or 0
 
-            # Return doctor with least pending predictions
-            if doctor_counts:
-                return min(doctor_counts, key=doctor_counts.get)
-
-            return doctors[0].id if doctors else None
+            return min(doctor_counts, key=doctor_counts.get)
 
         except Exception as e:
             print(f"Error getting next doctor: {e}")

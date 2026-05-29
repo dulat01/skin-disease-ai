@@ -240,6 +240,46 @@
         .modal { background: white; border-radius: 16px; padding: 32px; width: 90%; max-width: 440px; }
         .modal h3 { margin-bottom: 16px; color: #333; }
         .modal-close { float: right; background: none; border: none; font-size: 1.4em; cursor: pointer; color: #888; }
+
+        /* ===================== DOCTOR REVIEW ===================== */
+        .doctor-review-box {
+            margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 0.88em;
+        }
+        .doctor-review-approved { background: #e8f8e8; border: 1px solid #27ae60; color: #1a7a3a; }
+        .doctor-review-rejected { background: #fff0f0; border: 1px solid #e74c3c; color: #a93226; }
+        .doctor-review-pending { background: #fffbe6; border: 1px solid #f0b429; color: #7a6000; }
+
+        /* ===================== DOCTOR DASHBOARD ===================== */
+        .doctor-card {
+            background: white; border: 1px solid #e8e8f0; border-radius: 12px;
+            padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .doctor-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .doctor-card-title { font-weight: 700; color: #333; font-size: 1em; }
+        .doctor-card-meta { color: #888; font-size: 0.82em; margin-top: 3px; }
+        .doctor-chart { margin: 12px 0; }
+        .doctor-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.85em; }
+        .doctor-bar-label { width: 180px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .doctor-bar-track { flex: 1; background: #f0f0f0; border-radius: 4px; height: 10px; }
+        .doctor-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+        .doctor-bar-fill.malignant { background: #e74c3c; }
+        .doctor-bar-fill.benign { background: #27ae60; }
+        .doctor-bar-pct { width: 40px; text-align: right; color: #555; font-weight: 600; }
+        .doctor-user-msg { background: #f0f4ff; border-left: 3px solid #667eea; padding: 10px 14px; border-radius: 4px; font-size: 0.88em; color: #444; margin: 12px 0; }
+        .doctor-actions { display: flex; gap: 10px; margin-top: 14px; }
+        .btn-approve { flex: 1; padding: 9px; border: none; border-radius: 8px; background: #27ae60; color: white; font-weight: 600; cursor: pointer; font-size: 0.9em; }
+        .btn-approve:hover { background: #219a52; }
+        .btn-reject { flex: 1; padding: 9px; border: none; border-radius: 8px; background: #e74c3c; color: white; font-weight: 600; cursor: pointer; font-size: 0.9em; }
+        .btn-reject:hover { background: #c0392b; }
+        .doctor-notes-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; font-size: 0.88em; resize: vertical; min-height: 70px; margin-top: 10px; font-family: inherit; }
+        .doctor-reviewed-badge { font-size: 0.8em; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+        .badge-approved-doc { background: #d4edda; color: #155724; }
+        .badge-rejected-doc { background: #f8d7da; color: #721c24; }
+
+        /* ===================== USER MESSAGE SECTION ===================== */
+        .user-msg-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8e8e8; }
+        .user-msg-section label { font-size: 0.88em; color: #555; font-weight: 600; display: block; margin-bottom: 6px; }
+        .user-msg-section textarea { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 9px 12px; font-size: 0.88em; resize: vertical; min-height: 72px; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -251,7 +291,6 @@
         <div id="navAuth">
             <button class="nav-btn nav-btn-outline" onclick="showAuth('login')">Login</button>
             <button class="nav-btn nav-btn-solid" onclick="showAuth('register')">Register</button>
-            <button class="nav-btn nav-btn-outline" onclick="showSubscription()">Get Subscription</button>
             <button class="nav-btn nav-btn-outline" onclick="showDoctorLogin()">Doctor Login</button>
         </div>
         <div id="navUser">
@@ -313,71 +352,59 @@
 </div>
 
 <!-- =================== SUBSCRIPTION SECTION =================== -->
-<div id="subscriptionSection" style="display:none; flex: 1; align-items: center; justify-content: center; padding: 40px 20px;">
-    <div class="auth-card" style="max-width: 500px;">
-        <h2>Get Subscription</h2>
-        <p>Get professional doctor verification for your diagnoses</p>
-
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label>Select Plan:</label>
-            <div id="plansList" style="display: flex; flex-direction: column; gap: 10px;"></div>
-        </div>
-
-        <div class="form-group">
-            <label>Contact Information (for us to reach you):</label>
-            <input type="email" id="subEmail" class="form-input" placeholder="your@email.com">
-        </div>
-
-        <div class="form-group">
-            <label>Additional Notes (optional):</label>
-            <textarea id="subNotes" class="form-input" style="min-height: 80px;" placeholder="Any special requirements..."></textarea>
-        </div>
-
-        <button class="btn-submit" onclick="submitSubscriptionRequest()">Request Subscription</button>
-        <div class="auth-error" id="subError" style="margin-top:12px"></div>
-        <div class="auth-success" id="subSuccess" style="margin-top:12px"></div>
-
-        <button class="skip-auth" onclick="showAuth('login')">← Back to Login</button>
-    </div>
-</div>
-
 <!-- =================== DOCTOR LOGIN SECTION =================== -->
 <div id="doctorLoginSection" style="display:none; flex: 1; align-items: center; justify-content: center; padding: 40px 20px;">
     <div class="auth-card" style="max-width: 500px;">
-        <h2>Doctor Registration</h2>
-        <p>Register as a doctor to approve diagnoses</p>
+        <h2>Doctor Portal</h2>
+        <p>Login or register to review patient diagnoses</p>
 
-        <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" id="docName" class="form-input" placeholder="Dr. John Doe">
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="docTabLogin" onclick="switchDocTab('login')">Login</button>
+            <button class="auth-tab" id="docTabRegister" onclick="switchDocTab('register')">Register</button>
         </div>
 
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="docEmail" class="form-input" placeholder="doctor@example.com">
+        <!-- Doctor Login Form -->
+        <div id="docLoginForm">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="docLoginEmail" class="form-input" placeholder="doctor@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="docLoginPassword" class="form-input" placeholder="Password">
+            </div>
+            <button class="btn-submit" onclick="loginDoctor()">Login as Doctor</button>
         </div>
 
-        <div class="form-group">
-            <label>License Number</label>
-            <input type="text" id="docLicense" class="form-input" placeholder="License number">
+        <!-- Doctor Register Form -->
+        <div id="docRegisterForm" style="display:none">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="docName" class="form-input" placeholder="Dr. John Doe">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="docEmail" class="form-input" placeholder="doctor@example.com">
+            </div>
+            <div class="form-group">
+                <label>License Number</label>
+                <input type="text" id="docLicense" class="form-input" placeholder="License number">
+            </div>
+            <div class="form-group">
+                <label>Specialization</label>
+                <input type="text" id="docSpecialization" class="form-input" placeholder="e.g., Dermatology">
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="docPhone" class="form-input" placeholder="Phone number">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="docPassword" class="form-input" placeholder="Min 8 chars, uppercase + digit">
+            </div>
+            <button class="btn-submit" onclick="registerDoctor()">Register as Doctor</button>
         </div>
 
-        <div class="form-group">
-            <label>Specialization</label>
-            <input type="text" id="docSpecialization" class="form-input" placeholder="e.g., Dermatology">
-        </div>
-
-        <div class="form-group">
-            <label>Phone</label>
-            <input type="tel" id="docPhone" class="form-input" placeholder="Phone number">
-        </div>
-
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="docPassword" class="form-input" placeholder="Min 8 chars, uppercase + digit">
-        </div>
-
-        <button class="btn-submit" onclick="registerDoctor()">Register as Doctor</button>
         <div class="auth-error" id="docError" style="margin-top:12px"></div>
         <div class="auth-success" id="docSuccess" style="margin-top:12px"></div>
 
@@ -399,6 +426,7 @@
             <button class="app-tab active" id="appTabPredict" onclick="switchAppTab('predict')">Diagnose Image</button>
             <button class="app-tab" id="appTabHistory" onclick="switchAppTab('history')">My History</button>
             <button class="app-tab" id="appTabProfile" onclick="switchAppTab('profile')">Medical Profile</button>
+            <button class="app-tab" id="appTabDoctor" onclick="switchAppTab('doctor')" style="display:none; background:#2980b9; color:white">Doctor Dashboard</button>
             <button class="app-tab" id="appTabAdmin" onclick="switchAppTab('admin')" style="display:none; margin-left:auto; background:#e74c3c; color:white">Admin Panel</button>
         </div>
 
@@ -415,6 +443,10 @@
                         <input type="file" id="imageInput" accept="image/*">
                     </div>
                     <img id="imagePreview" alt="Preview">
+                    <div class="user-msg-section" id="userMsgSection" style="display:none">
+                        <label>Message to doctor (optional)</label>
+                        <textarea id="userMsgInput" placeholder="Describe symptoms, duration, concerns..."></textarea>
+                    </div>
                     <button class="btn-predict" id="predictBtn" disabled onclick="doPrediction()">Analyze Image</button>
                     <div class="error-box" id="errorBox"></div>
                 </div>
@@ -567,6 +599,25 @@
             </div>
         </div>
 
+        <!-- DOCTOR DASHBOARD TAB -->
+        <div id="panelDoctor" class="tab-panel">
+            <div id="doctorDashAuthRequired" class="auth-required-msg" style="display:none">
+                <p style="font-size:1.1em; margin-bottom:8px">Doctor login required</p>
+            </div>
+            <div id="doctorDashContent" style="display:none; max-width:860px; margin:0 auto">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px">
+                    <div>
+                        <div class="section-title" style="margin-bottom:4px">Review Queue</div>
+                        <div id="doctorDashName" style="color:#888; font-size:0.9em"></div>
+                    </div>
+                    <button class="btn-refresh" onclick="loadDoctorQueue()">Refresh</button>
+                </div>
+                <div id="doctorQueueLoading" class="history-loading" style="display:none">Loading queue...</div>
+                <div id="doctorQueueEmpty" class="history-empty" style="display:none">No pending cases to review</div>
+                <div id="doctorQueueList"></div>
+            </div>
+        </div>
+
         <!-- ADMIN TAB -->
         <div id="panelAdmin" class="tab-panel">
             <div id="adminAuthRequired" class="auth-required-msg" style="display:none">
@@ -600,38 +651,6 @@
                     <div id="doctorsError" class="auth-error" style="margin-top:12px; display:none"></div>
                 </div>
 
-                <!-- Subscription Requests Section -->
-                <div style="margin-bottom:24px">
-                    <h3 style="color:#555; font-size:1.2em; margin-bottom:16px">Subscription Requests</h3>
-                    <div style="margin-bottom:16px">
-                        <label style="margin-right:20px">
-                            <input type="radio" name="subStatus" value="pending" checked onchange="loadSubscriptionRequests()"> Pending
-                        </label>
-                        <label style="margin-right:20px">
-                            <input type="radio" name="subStatus" value="approved" onchange="loadSubscriptionRequests()"> Approved
-                        </label>
-                        <label>
-                            <input type="radio" name="subStatus" value="declined" onchange="loadSubscriptionRequests()"> Declined
-                        </label>
-                    </div>
-                    <div id="subRequestsLoading" class="history-loading" style="display:none">Loading requests...</div>
-                    <div id="subRequestsTable" style="display:none">
-                        <table style="width:100%; border-collapse:collapse; font-size:0.9em">
-                            <thead style="background:#f5f5f5; border-bottom:2px solid #e0e0e0">
-                                <tr>
-                                    <th style="padding:12px; text-align:left">Contact Info</th>
-                                    <th style="padding:12px; text-align:left">Plan</th>
-                                    <th style="padding:12px; text-align:left">Notes</th>
-                                    <th style="padding:12px; text-align:left">Status</th>
-                                    <th style="padding:12px; text-align:center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subRequestsTableBody"></tbody>
-                        </table>
-                    </div>
-                    <div id="subRequestsEmpty" class="history-empty" style="display:none">No subscription requests</div>
-                    <div id="subRequestsError" class="auth-error" style="margin-top:12px; display:none"></div>
-                </div>
             </div>
         </div>
     </div>
@@ -642,6 +661,7 @@
 // STATE
 // =====================================================================
 let currentUser = null;
+let currentDoctor = null;
 let currentPredictionId = null;
 let feedbackIsCorrect = null;
 let selectedFile = null;
@@ -659,6 +679,18 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 async function checkSession() {
     try {
+        // Check doctor session first
+        const docRes = await fetch('/api/doctor/me');
+        if (docRes.ok) {
+            const docData = await docRes.json();
+            if (docData.success) {
+                currentDoctor = docData.data;
+                enterApp();
+                return;
+            }
+        }
+    } catch (e) {}
+    try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
             const data = await res.json();
@@ -669,7 +701,6 @@ async function checkSession() {
             }
         }
     } catch (e) {}
-    // Not logged in - show auth page
     showAuthSection();
 }
 
@@ -786,39 +817,55 @@ function showAuthError(elId, msg) {
 // =====================================================================
 function enterApp() {
     document.getElementById('authSection').style.display = 'none';
+    document.getElementById('doctorLoginSection').style.display = 'none';
     document.getElementById('appSection').style.display = 'block';
     document.getElementById('navAuth').style.display = 'none';
     document.getElementById('navUser').style.display = 'flex';
 
+    document.getElementById('appTabAdmin').style.display = 'none';
+    document.getElementById('appTabDoctor').style.display = 'none';
+
+    if (currentDoctor) {
+        document.getElementById('navUserName').textContent = 'Dr. ' + (currentDoctor.full_name || currentDoctor.email);
+        document.getElementById('appTabDoctor').style.display = 'inline-block';
+        switchAppTab('doctor');
+        return;
+    }
+
     if (currentUser) {
         document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.email;
-        // Show admin tab if user is admin
         if (currentUser.is_admin) {
             document.getElementById('appTabAdmin').style.display = 'block';
-        } else {
-            document.getElementById('appTabAdmin').style.display = 'none';
         }
+        document.getElementById('userMsgSection').style.display = 'block';
     } else {
         document.getElementById('navUserName').textContent = 'Anonymous';
-        document.getElementById('appTabAdmin').style.display = 'none';
+        document.getElementById('userMsgSection').style.display = 'none';
     }
 
     switchAppTab('predict');
 }
+
 
 function showAppTab(tab) {
     switchAppTab(tab);
 }
 
 function switchAppTab(tab) {
+    ['predict','history','profile','admin','doctor'].forEach(t => {
+        const panel = document.getElementById('panelPredict'.replace('predict', t === 'predict' ? 'predict' : t === 'history' ? 'History' : t === 'profile' ? 'Profile' : t === 'admin' ? 'Admin' : 'Doctor'));
+        if (panel) panel.classList.toggle('active', tab === t);
+    });
     document.getElementById('panelPredict').classList.toggle('active', tab === 'predict');
     document.getElementById('panelHistory').classList.toggle('active', tab === 'history');
     document.getElementById('panelProfile').classList.toggle('active', tab === 'profile');
     document.getElementById('panelAdmin').classList.toggle('active', tab === 'admin');
+    document.getElementById('panelDoctor').classList.toggle('active', tab === 'doctor');
     document.getElementById('appTabPredict').classList.toggle('active', tab === 'predict');
     document.getElementById('appTabHistory').classList.toggle('active', tab === 'history');
     document.getElementById('appTabProfile').classList.toggle('active', tab === 'profile');
     document.getElementById('appTabAdmin').classList.toggle('active', tab === 'admin');
+    document.getElementById('appTabDoctor').classList.toggle('active', tab === 'doctor');
     document.getElementById('navTabPredict').classList.toggle('active', tab === 'predict');
     document.getElementById('navTabHistory').classList.toggle('active', tab === 'history');
     document.getElementById('navTabProfile').classList.toggle('active', tab === 'profile');
@@ -849,16 +896,33 @@ function switchAppTab(tab) {
             document.getElementById('adminAuthRequired').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
             loadDoctors();
-            loadSubscriptionRequests();
+        }
+    } else if (tab === 'doctor') {
+        if (!currentDoctor) {
+            document.getElementById('doctorDashAuthRequired').style.display = 'block';
+            document.getElementById('doctorDashContent').style.display = 'none';
+        } else {
+            document.getElementById('doctorDashAuthRequired').style.display = 'none';
+            document.getElementById('doctorDashContent').style.display = 'block';
+            document.getElementById('doctorDashName').textContent = currentDoctor.specialization ? currentDoctor.specialization : currentDoctor.email;
+            loadDoctorQueue();
         }
     }
 }
 
 async function doLogout() {
     try {
-        await fetch('/api/auth/logout', {method: 'POST'});
-    } catch (e) {}
-    currentUser = null;
+        if (currentDoctor) {
+            await fetch('/api/doctor/logout', {method: 'POST'});
+            currentDoctor = null;
+        } else {
+            await fetch('/api/auth/logout', {method: 'POST'});
+            currentUser = null;
+        }
+    } catch (e) {
+        currentUser = null;
+        currentDoctor = null;
+    }
     showAuthSection();
 }
 
@@ -901,6 +965,8 @@ async function doPrediction() {
 
     const formData = new FormData();
     formData.append('image', selectedFile);
+    const userMsg = document.getElementById('userMsgInput').value.trim();
+    if (userMsg) formData.append('user_message', userMsg);
 
     try {
         const res = await fetch('/api/predict', {method: 'POST', body: formData});
@@ -1049,16 +1115,30 @@ async function loadHistory() {
             const badgeText = item.is_malignant ? 'Malignant' : 'Benign';
             const icon = item.is_malignant ? '🔴' : '🟢';
 
+            let doctorHtml = '';
+            if (item.doctor_id) {
+                if (item.doctor_approved === true) {
+                    doctorHtml = `<div class="doctor-review-box doctor-review-approved">✅ <strong>Doctor approved</strong>${item.doctor_notes ? ': ' + item.doctor_notes : ''}</div>`;
+                } else if (item.doctor_approved === false) {
+                    doctorHtml = `<div class="doctor-review-box doctor-review-rejected">❌ <strong>Doctor rejected</strong>${item.doctor_notes ? ': ' + item.doctor_notes : ''}</div>`;
+                } else {
+                    doctorHtml = `<div class="doctor-review-box doctor-review-pending">⏳ Awaiting doctor review</div>`;
+                }
+            }
+
             list.innerHTML += `
-                <div class="history-item">
-                    <div class="history-item-info">
-                        <div class="history-item-class">${icon} ${item.predicted_class || 'Unknown'}</div>
-                        <div class="history-item-meta">${item.original_filename || ''} &bull; ${date}</div>
+                <div class="history-item" style="flex-direction:column; align-items:stretch; gap:0">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                        <div class="history-item-info">
+                            <div class="history-item-class">${icon} ${item.predicted_class || 'Unknown'}</div>
+                            <div class="history-item-meta">${item.original_filename || ''} &bull; ${date}</div>
+                        </div>
+                        <div class="history-item-right">
+                            <div class="history-badge ${badgeClass}">${badgeText}</div>
+                            <div style="color:#888;font-size:0.8em;margin-top:4px">${conf}</div>
+                        </div>
                     </div>
-                    <div class="history-item-right">
-                        <div class="history-badge ${badgeClass}">${badgeText}</div>
-                        <div style="color:#888;font-size:0.8em;margin-top:4px">${conf}</div>
-                    </div>
+                    ${doctorHtml}
                 </div>`;
         });
 
@@ -1167,99 +1247,49 @@ async function saveProfile() {
 // =====================================================================
 // SUBSCRIPTION & DOCTOR REGISTRATION
 // =====================================================================
-function showSubscription() {
-    document.getElementById('authSection').style.display = 'none';
-    document.getElementById('subscriptionSection').style.display = 'flex';
-    document.getElementById('doctorLoginSection').style.display = 'none';
-    loadSubscriptionPlans();
-}
-
 function showDoctorLogin() {
     document.getElementById('authSection').style.display = 'none';
-    document.getElementById('subscriptionSection').style.display = 'none';
     document.getElementById('doctorLoginSection').style.display = 'flex';
+    switchDocTab('login');
 }
 
-async function loadSubscriptionPlans() {
-    try {
-        const res = await fetch('/api/subscription/plans');
-        const data = await res.json();
-
-        if (data.success && data.data) {
-            const plansList = document.getElementById('plansList');
-            plansList.innerHTML = '';
-
-            data.data.forEach(plan => {
-                const div = document.createElement('div');
-                div.style.cssText = 'padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s;';
-                div.onclick = () => selectPlan(plan.id);
-                div.innerHTML = `<strong>${plan.name}</strong> - ${plan.description || ''}`;
-                plansList.appendChild(div);
-            });
-        }
-    } catch (e) {
-        console.error('Error loading plans:', e);
-    }
+function switchDocTab(tab) {
+    document.getElementById('docLoginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('docRegisterForm').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('docTabLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('docTabRegister').classList.toggle('active', tab === 'register');
 }
 
-let selectedPlanId = null;
+async function loginDoctor() {
+    const email = document.getElementById('docLoginEmail').value.trim();
+    const password = document.getElementById('docLoginPassword').value;
+    if (!email || !password) { showDocError('Please enter email and password'); return; }
 
-function selectPlan(planId) {
-    selectedPlanId = planId;
-    document.querySelectorAll('#plansList > div').forEach(el => {
-        el.style.borderColor = '#e0e0e0';
-        el.style.background = 'transparent';
-    });
-    event.target.closest('div').style.borderColor = '#667eea';
-    event.target.closest('div').style.background = '#f0f0ff';
-}
-
-async function submitSubscriptionRequest() {
-    if (!selectedPlanId) {
-        showSubError('Please select a plan');
-        return;
-    }
-
-    const email = document.getElementById('subEmail').value.trim();
-    if (!email) {
-        showSubError('Please enter your email');
-        return;
-    }
-
-    const notes = document.getElementById('subNotes').value.trim();
-    document.querySelector('[onclick="submitSubscriptionRequest()"]').disabled = true;
+    const btn = document.querySelector('#docLoginForm .btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'Logging in...';
+    document.getElementById('docError').style.display = 'none';
 
     try {
-        const res = await fetch('/api/subscription/request', {
+        const res = await fetch('/api/doctors/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                plan_id: selectedPlanId,
-                contact_info: email,
-                notes: notes || null
-            })
+            body: JSON.stringify({email, password})
         });
         const data = await res.json();
 
         if (res.ok && data.success) {
-            document.getElementById('subSuccess').textContent = 'Subscription request submitted! We will contact you at ' + email;
-            document.getElementById('subSuccess').style.display = 'block';
-            document.getElementById('subError').style.display = 'none';
-            setTimeout(() => showAuth('login'), 2000);
+            currentDoctor = data.data.doctor;
+            enterApp();
         } else {
-            showSubError(data.detail || data.error || 'Failed to submit request');
+            showDocError(data.detail || data.error || 'Login failed');
         }
     } catch (e) {
-        showSubError('Error: ' + e.message);
+        showDocError('Connection error: ' + e.message);
     } finally {
-        document.querySelector('[onclick="submitSubscriptionRequest()"]').disabled = false;
+        btn.disabled = false;
+        btn.textContent = 'Login as Doctor';
     }
-}
-
-function showSubError(msg) {
-    const el = document.getElementById('subError');
-    el.textContent = msg;
-    el.style.display = 'block';
 }
 
 async function registerDoctor() {
@@ -1311,6 +1341,112 @@ function showDocError(msg) {
     const el = document.getElementById('docError');
     el.textContent = msg;
     el.style.display = 'block';
+}
+
+// =====================================================================
+// DOCTOR DASHBOARD
+// =====================================================================
+async function loadDoctorQueue() {
+    if (!currentDoctor) return;
+    const list = document.getElementById('doctorQueueList');
+    const empty = document.getElementById('doctorQueueEmpty');
+    const loading = document.getElementById('doctorQueueLoading');
+
+    list.innerHTML = '';
+    empty.style.display = 'none';
+    loading.style.display = 'block';
+
+    try {
+        const res = await fetch('/api/doctor/queue');
+        const data = await res.json();
+        loading.style.display = 'none';
+
+        if (!res.ok || !data.success) {
+            list.innerHTML = '<div class="history-empty">Failed to load queue.</div>';
+            return;
+        }
+
+        const items = data.data || [];
+        if (items.length === 0) { empty.style.display = 'block'; return; }
+
+        items.forEach(item => {
+            const conf = item.confidence ? (item.confidence * 100).toFixed(1) : '0';
+            const date = item.created_at ? new Date(item.created_at).toLocaleDateString() : '—';
+            const icon = item.is_malignant ? '🔴' : '🟢';
+            const topPreds = item.top_predictions || [];
+
+            const barsHtml = topPreds.slice(0, 5).map(p => {
+                const pct = (p.confidence * 100).toFixed(1);
+                const cls = p.is_malignant ? 'malignant' : 'benign';
+                return `<div class="doctor-bar-row">
+                    <div class="doctor-bar-label">${p.is_malignant ? '🔴' : '🟢'} ${p.class_name}</div>
+                    <div class="doctor-bar-track"><div class="doctor-bar-fill ${cls}" style="width:${pct}%"></div></div>
+                    <div class="doctor-bar-pct">${pct}%</div>
+                </div>`;
+            }).join('');
+
+            const userMsgHtml = item.user_message
+                ? `<div class="doctor-user-msg"><strong>Patient message:</strong> ${item.user_message}</div>`
+                : '';
+
+            list.innerHTML += `
+                <div class="doctor-card" id="card-${item.id}">
+                    <div class="doctor-card-header">
+                        <div>
+                            <div class="doctor-card-title">${icon} ${item.predicted_class || 'Unknown'} — ${conf}% confidence</div>
+                            <div class="doctor-card-meta">${item.original_filename || 'image'} &bull; ${date}</div>
+                        </div>
+                        <div class="${item.is_malignant ? 'history-badge badge-malignant' : 'history-badge badge-benign'}">${item.is_malignant ? 'Malignant' : 'Benign'}</div>
+                    </div>
+                    <div class="doctor-chart">${barsHtml}</div>
+                    ${userMsgHtml}
+                    <textarea class="doctor-notes-input" id="notes-${item.id}" placeholder="Add your comments or recommendations..."></textarea>
+                    <div class="doctor-actions">
+                        <button class="btn-approve" onclick="submitDoctorReview('${item.id}', true)">✅ Approve</button>
+                        <button class="btn-reject" onclick="submitDoctorReview('${item.id}', false)">❌ Reject</button>
+                    </div>
+                    <div id="review-msg-${item.id}" style="display:none; margin-top:8px; font-size:0.88em; font-weight:600"></div>
+                </div>`;
+        });
+    } catch (e) {
+        loading.style.display = 'none';
+        list.innerHTML = '<div class="history-empty">Error loading queue.</div>';
+    }
+}
+
+async function submitDoctorReview(predId, approved) {
+    const notes = document.getElementById(`notes-${predId}`).value.trim();
+    const msgEl = document.getElementById(`review-msg-${predId}`);
+    const card = document.getElementById(`card-${predId}`);
+    const btns = card.querySelectorAll('.btn-approve, .btn-reject');
+    btns.forEach(b => b.disabled = true);
+
+    try {
+        const res = await fetch(`/api/doctor/predictions/${predId}/review`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({approved, notes: notes || null})
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            msgEl.style.display = 'block';
+            msgEl.style.color = approved ? '#27ae60' : '#e74c3c';
+            msgEl.textContent = approved ? '✅ Approved successfully' : '❌ Rejected successfully';
+            card.querySelector('.doctor-notes-input').disabled = true;
+            setTimeout(() => { card.style.opacity = '0.5'; }, 500);
+        } else {
+            msgEl.style.display = 'block';
+            msgEl.style.color = '#e74c3c';
+            msgEl.textContent = data.detail || data.error || 'Failed to submit review';
+            btns.forEach(b => b.disabled = false);
+        }
+    } catch (e) {
+        msgEl.style.display = 'block';
+        msgEl.style.color = '#e74c3c';
+        msgEl.textContent = 'Error: ' + e.message;
+        btns.forEach(b => b.disabled = false);
+    }
 }
 
 // =====================================================================
@@ -1390,106 +1526,6 @@ async function verifyDoctor(doctorId) {
     }
 }
 
-async function loadSubscriptionRequests() {
-    const table = document.getElementById('subRequestsTable');
-    const tbody = document.getElementById('subRequestsTableBody');
-    const empty = document.getElementById('subRequestsEmpty');
-    const loading = document.getElementById('subRequestsLoading');
-    const error = document.getElementById('subRequestsError');
-
-    const status = document.querySelector('input[name="subStatus"]:checked').value;
-
-    table.style.display = 'none';
-    empty.style.display = 'none';
-    loading.style.display = 'block';
-    error.style.display = 'none';
-
-    try {
-        const res = await fetch(`/api/admin/subscription-requests?status=${status}`);
-        const data = await res.json();
-        loading.style.display = 'none';
-
-        if (!res.ok || !data.success) {
-            error.textContent = data.detail || data.error || 'Failed to load requests';
-            error.style.display = 'block';
-            return;
-        }
-
-        const requests = data.data || [];
-        if (requests.length === 0) {
-            empty.style.display = 'block';
-            return;
-        }
-
-        tbody.innerHTML = '';
-        requests.forEach(req => {
-            let actionBtns = '';
-            if (status === 'pending') {
-                actionBtns = `
-                    <button class="btn-predict" style="padding:8px 12px; font-size:0.9em" onclick="approveSubscription('${req.id}')">Approve</button>
-                    <button style="padding:8px 12px; font-size:0.9em; background:#e74c3c; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:4px" onclick="declineSubscription('${req.id}')">Decline</button>`;
-            } else {
-                actionBtns = `<span style="color:#888">—</span>`;
-            }
-
-            tbody.innerHTML += `
-                <tr style="border-bottom:1px solid #e0e0e0">
-                    <td style="padding:12px">${req.contact_info || '—'}</td>
-                    <td style="padding:12px">${req.plan_name || req.plan_id || '—'}</td>
-                    <td style="padding:12px; max-width:200px; overflow:hidden; text-overflow:ellipsis">${req.notes || '—'}</td>
-                    <td style="padding:12px; text-transform:capitalize">${req.status || '—'}</td>
-                    <td style="padding:12px; text-align:center">${actionBtns}</td>
-                </tr>`;
-        });
-
-        table.style.display = 'block';
-    } catch (e) {
-        loading.style.display = 'none';
-        error.textContent = 'Error loading requests: ' + e.message;
-        error.style.display = 'block';
-    }
-}
-
-async function approveSubscription(requestId) {
-    if (!confirm('Approve this subscription request?')) return;
-
-    try {
-        const res = await fetch(`/api/admin/subscription-requests/${requestId}/approve`, {method: 'POST'});
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-            alert('Subscription approved!');
-            loadSubscriptionRequests();
-        } else {
-            alert(data.detail || data.error || 'Failed to approve');
-        }
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-}
-
-async function declineSubscription(requestId) {
-    const reason = prompt('Enter decline reason (optional):');
-    if (reason === null) return;
-
-    try {
-        const res = await fetch(`/api/admin/subscription-requests/${requestId}/decline`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({reason: reason || null})
-        });
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-            alert('Subscription request declined');
-            loadSubscriptionRequests();
-        } else {
-            alert(data.detail || data.error || 'Failed to decline');
-        }
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-}
 
 // =====================================================================
 // HEALTH

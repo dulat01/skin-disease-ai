@@ -128,15 +128,21 @@ def predict():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}_{filename}")
         image.save(filepath)
 
+        user_message = request.form.get('user_message', '').strip() or None
+
         try:
             with open(filepath, 'rb') as f:
                 files = {'image': (filename, f, image.content_type or 'image/jpeg')}
+                data = {}
+                if user_message:
+                    data['user_message'] = user_message
 
                 if session.get('access_token'):
                     # Authenticated: go through API Gateway (JWT is validated, X-User-ID set from token)
                     resp = requests.post(
                         f"{API_GATEWAY_URL}/api/v1/predictions/",
                         files=files,
+                        data=data,
                         headers=get_auth_headers(),
                         timeout=60
                     )
@@ -145,6 +151,7 @@ def predict():
                     resp = requests.post(
                         f"{PREDICTION_SERVICE_URL}/api/v1/predictions/",
                         files=files,
+                        data=data,
                         headers={'X-User-ID': str(uuid.uuid4())},
                         timeout=60
                     )
@@ -257,6 +264,65 @@ def update_profile():
 # DOCTOR & SUBSCRIPTION ROUTES
 # =============================================================================
 
+def get_doctor_auth_headers():
+    """Return Authorization header using doctor token"""
+    token = session.get('doctor_token')
+    if token:
+        return {'Authorization': f'Bearer {token}'}
+    return {}
+
+
+@app.route('/api/doctor/queue', methods=['GET'])
+def doctor_queue():
+    if not session.get('doctor_token'):
+        return jsonify({'success': False, 'error': 'Doctor authentication required'}), 401
+    try:
+        resp = requests.get(
+            f"{API_GATEWAY_URL}/api/v1/predictions/doctor/queue",
+            headers=get_doctor_auth_headers(),
+            timeout=15
+        )
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'success': False, 'error': 'Cannot connect to backend'}), 503
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/doctor/predictions/<prediction_id>/review', methods=['POST'])
+def doctor_review_prediction(prediction_id):
+    if not session.get('doctor_token'):
+        return jsonify({'success': False, 'error': 'Doctor authentication required'}), 401
+    try:
+        data = request.get_json()
+        resp = requests.post(
+            f"{API_GATEWAY_URL}/api/v1/predictions/{prediction_id}/review",
+            json=data,
+            headers=get_doctor_auth_headers(),
+            timeout=10
+        )
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.ConnectionError:
+        return jsonify({'success': False, 'error': 'Cannot connect to backend'}), 503
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/doctor/logout', methods=['POST'])
+def doctor_logout():
+    session.pop('doctor_token', None)
+    session.pop('doctor', None)
+    return jsonify({'success': True})
+
+
+@app.route('/api/doctor/me', methods=['GET'])
+def doctor_me():
+    doctor = session.get('doctor')
+    if not doctor:
+        return jsonify({'success': False, 'error': 'Not authenticated as doctor'}), 401
+    return jsonify({'success': True, 'data': doctor})
+
+
 @app.route('/api/doctors/register', methods=['POST'])
 def register_doctor():
     try:
@@ -296,56 +362,6 @@ def login_doctor():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/subscription/plans', methods=['GET'])
-def get_subscription_plans():
-    try:
-        resp = requests.get(
-            f"{API_GATEWAY_URL}/api/v1/public/subscription/plans",
-            timeout=10
-        )
-        result = resp.json()
-        return jsonify(result), resp.status_code
-    except requests.exceptions.ConnectionError:
-        return jsonify({'success': False, 'error': 'Cannot connect to backend'}), 503
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/subscription/request', methods=['POST'])
-def request_subscription():
-    try:
-        data = request.get_json()
-        # Use public endpoint - no authentication required
-        resp = requests.post(
-            f"{API_GATEWAY_URL}/api/v1/public/subscription/request",
-            json=data,
-            timeout=10
-        )
-        return jsonify(resp.json()), resp.status_code
-    except requests.exceptions.ConnectionError:
-        return jsonify({'success': False, 'error': 'Cannot connect to backend'}), 503
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/subscription/status', methods=['GET'])
-def get_subscription_status():
-    if not session.get('access_token'):
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-
-    try:
-        resp = requests.get(
-            f"{API_GATEWAY_URL}/api/v1/auth/subscription/status",
-            headers=get_auth_headers(),
-            timeout=10
-        )
-        return jsonify(resp.json()), resp.status_code
-    except requests.exceptions.ConnectionError:
-        return jsonify({'success': False, 'error': 'Cannot connect to backend'}), 503
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
 # =============================================================================
 # ADMIN ROUTES
 # =============================================================================
@@ -375,39 +391,6 @@ def admin_verify_doctor(doctor_id):
     try:
         resp = requests.post(
             f"{API_GATEWAY_URL}/api/v1/auth/admin/doctors/{doctor_id}/verify",
-            headers=get_auth_headers(),
-            timeout=10
-        )
-        return jsonify(resp.json()), resp.status_code
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/admin/subscription-requests', methods=['GET'])
-def admin_list_subscription_requests():
-    if not session.get('access_token'):
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-
-    try:
-        resp = requests.get(
-            f"{API_GATEWAY_URL}/api/v1/auth/admin/subscription-requests",
-            params={'status': request.args.get('status', 'pending')},
-            headers=get_auth_headers(),
-            timeout=10
-        )
-        return jsonify(resp.json()), resp.status_code
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/admin/subscription-requests/<request_id>/approve', methods=['POST'])
-def admin_approve_subscription(request_id):
-    if not session.get('access_token'):
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-
-    try:
-        resp = requests.post(
-            f"{API_GATEWAY_URL}/api/v1/auth/admin/subscription-requests/{request_id}/approve",
             headers=get_auth_headers(),
             timeout=10
         )

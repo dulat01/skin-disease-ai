@@ -40,6 +40,9 @@ class Prediction(Base):
     # Celery task (for async predictions)
     celery_task_id = Column(String(255), nullable=True, index=True)
 
+    # User message for doctor (subscription users only)
+    user_message = Column(Text, nullable=True)
+
     # Doctor review (if user has subscription)
     doctor_id = Column(UUID(as_uuid=True), nullable=True, index=True)  # Doctor assigned to review
     doctor_approved = Column(Boolean, nullable=True)
@@ -69,6 +72,7 @@ class Prediction(Base):
             "error_message": self.error_message,
             "celery_task_id": self.celery_task_id,
             "doctor_id": str(self.doctor_id) if self.doctor_id else None,
+            "user_message": self.user_message,
             "doctor_approved": self.doctor_approved,
             "doctor_notes": self.doctor_notes,
             "doctor_reviewed_at": self.doctor_reviewed_at.isoformat() if self.doctor_reviewed_at else None,

@@ -5,15 +5,17 @@ import io
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Header
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Header, Form
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.database import get_db
-from app.schemas.prediction import PredictionResponse, TaskStatusResponse, TopPrediction
+from app.schemas.prediction import PredictionResponse, TaskStatusResponse, TopPrediction, DoctorReviewCreate, DoctorQueueItem
 from app.services.predictor import PredictorService
 from app.services.storage import get_storage_service
 from app.services.image_processor import ImageProcessor
-from app.services.subscription import SubscriptionService
+from app.services.subscription import SubscriptionService  # used for doctor assignment
 from app.tasks.prediction_tasks import predict_async
 from app.events.publisher import EventPublisher
 
@@ -25,9 +27,85 @@ def get_user_id_from_header(x_user_id: str = Header(..., description="User ID fr
     return x_user_id
 
 
+@router.get("/doctor/queue", response_model=dict)
+async def get_doctor_queue(
+    user_id: str = Depends(get_user_id_from_header),
+    db: AsyncSession = Depends(get_db)
+):
+    """Doctor: get pending predictions assigned to this doctor"""
+    from app.models.prediction import Prediction
+    stmt = select(Prediction).where(
+        Prediction.doctor_id == UUID(user_id),
+        Prediction.doctor_approved == None,
+        Prediction.status == "completed"
+    ).order_by(Prediction.created_at.asc())
+    result = await db.execute(stmt)
+    predictions = result.scalars().all()
+
+    items = []
+    for pred in predictions:
+        top_preds = None
+        if pred.top_predictions:
+            top_preds = [
+                TopPrediction(
+                    class_name=p["class_name"],
+                    confidence=p["confidence"],
+                    is_malignant=p["is_malignant"]
+                ) for p in pred.top_predictions
+            ]
+        items.append(DoctorQueueItem(
+            id=str(pred.id),
+            user_id=str(pred.user_id),
+            original_filename=pred.original_filename,
+            predicted_class=pred.predicted_class,
+            confidence=pred.confidence,
+            is_malignant=pred.is_malignant,
+            top_predictions=top_preds,
+            user_message=pred.user_message,
+            created_at=pred.created_at,
+            status=pred.status
+        ))
+
+    return {"success": True, "message": "Doctor queue retrieved", "data": items}
+
+
+@router.post("/{prediction_id}/review", response_model=dict)
+async def review_prediction(
+    prediction_id: str,
+    review: DoctorReviewCreate,
+    user_id: str = Depends(get_user_id_from_header),
+    db: AsyncSession = Depends(get_db)
+):
+    """Doctor: approve or reject a prediction with notes"""
+    from app.models.prediction import Prediction
+    try:
+        pred_uuid = UUID(prediction_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid prediction ID")
+
+    stmt = select(Prediction).where(
+        Prediction.id == pred_uuid,
+        Prediction.doctor_id == UUID(user_id)
+    )
+    result = await db.execute(stmt)
+    prediction = result.scalar_one_or_none()
+
+    if not prediction:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prediction not found or not assigned to you")
+
+    prediction.doctor_approved = review.approved
+    prediction.doctor_notes = review.notes
+    prediction.doctor_reviewed_at = datetime.utcnow()
+    await db.commit()
+
+    action = "approved" if review.approved else "rejected"
+    return {"success": True, "message": f"Prediction {action}", "data": {"prediction_id": prediction_id, "approved": review.approved}}
+
+
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_prediction(
     image: UploadFile = File(..., description="Image file to analyze"),
+    user_message: Optional[str] = Form(None, description="Optional message to doctor (subscription users)"),
     user_id: str = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
@@ -58,16 +136,15 @@ async def create_prediction(
             original_filename=image.filename or "image.jpg"
         )
 
-        # Check if user has active subscription and assign doctor
+        # Assign next available doctor to every authenticated prediction
         subscription_service = SubscriptionService(db)
-        has_subscription = await subscription_service.check_user_subscription(user_id)
-
-        if has_subscription:
-            doctor_id = await subscription_service.get_next_available_doctor()
-            if doctor_id:
-                prediction.doctor_id = doctor_id
-                await db.commit()
-                await db.refresh(prediction)
+        doctor_id = await subscription_service.get_next_available_doctor()
+        if doctor_id:
+            prediction.doctor_id = doctor_id
+            if user_message:
+                prediction.user_message = user_message.strip()
+            await db.commit()
+            await db.refresh(prediction)
 
         # Publish event
         publisher = EventPublisher()
@@ -100,6 +177,7 @@ async def create_prediction(
                 processing_time_ms=prediction.processing_time_ms,
                 model_version=prediction.model_version,
                 status=prediction.status,
+                user_message=prediction.user_message,
                 doctor_id=str(prediction.doctor_id) if prediction.doctor_id else None,
                 doctor_approved=prediction.doctor_approved,
                 doctor_notes=prediction.doctor_notes,
