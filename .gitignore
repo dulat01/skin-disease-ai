@@ -86,3 +86,6 @@ CAS_ISIC_base/
 pretrained_models/
 2/
 
+# Claude / AI agent configs
+.claude/
+
